@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-10-27T04:22:28Z",
+  "package": {
+    "name": "chordsym",
+    "version": "0.0.1",
+    "display_name": "chordsym",
+    "source": "pyproject.toml"
+  },
+  "git": {
+    "available": true,
+    "commit": "f72001ef8188853262bcd1008b43553242986dfd",
+    "short_commit": "f72001e",
+    "branch": "main",
+    "tags": [],
+    "dirty": false,
+    "remote_url": "https://github.com/thorwhalen/chordsym",
+    "commit_url": "https://github.com/thorwhalen/chordsym/commit/f72001ef8188853262bcd1008b43553242986dfd",
+    "error": null
+  },
+  "ci": {
+    "provider": "github",
+    "repository": "thorwhalen/chordsym",
+    "sha": "f72001ef8188853262bcd1008b43553242986dfd",
+    "sha_in_history": true,
+    "ref": "refs/heads/main",
+    "ref_name": "main",
+    "run_id": "40449251716",
+    "run_url": "https://github.com/thorwhalen/chordsym/actions/runs/40449251716",
+    "server_url": "https://github.com"
+  },
+  "tools": {
+    "epythet": "0.2.22",
+    "sphinx": "9.1.1",
+    "docutils": "0.22.4",
+    "python": "3.12.15"
+  },
+  "config": {
+    "theme": "auto",
+    "html_theme": "shibuya",
+    "accent": "#00697e",
+    "mode": "auto",
+    "api_generator": "autosummary",
+    "ignore": [
+      "tests/",
+      "scrap/",
+      "examples/"
+    ],
+    "agent_outputs": true,
+    "aggregates": [
+      "md"
+    ],
+    "ai_artifacts": true,
+    "provenance": true,
+    "docs_dir": "docsrc"
+  },
+  "site": {
+    "modules_documented": 4,
+    "objects_documented": 10
+  },
+  "pypi": {
+    "checked": true,
+    "latest": null,
+    "relation": "unknown",
+    "error": null
+  },
+  "reproduce": "git clone https://github.com/thorwhalen/chordsym && cd chordsym\ngit checkout f72001ef8188853262bcd1008b43553242986dfd\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "warnings": [],
+  "alignment": {
+    "aligned": true,
+    "notes": []
+  }
+}

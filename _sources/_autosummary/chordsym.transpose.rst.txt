@@ -1,0 +1,15 @@
+chordsym.transpose
+==================
+
+.. automodule:: chordsym.transpose
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      key_name
+      transpose_chord
+      transposition_table
+      uses_flats
+   

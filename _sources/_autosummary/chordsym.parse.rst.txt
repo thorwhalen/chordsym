@@ -1,0 +1,14 @@
+chordsym.parse
+==============
+
+.. automodule:: chordsym.parse
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chord_tones
+      is_chord_token
+      parse_chord
+   

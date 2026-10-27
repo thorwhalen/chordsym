@@ -1,0 +1,22 @@
+# chordsym
+
+> Chord symbols without dependencies: parse, pitch classes, key estimation, transposition
+
+
+## Pages
+
+- [chordsym](index.html.md): Chord symbols without dependencies (standard library only): is this token a chord, which root and qu...
+- [API reference](api.html.md): | &#96;chordsym&#96;   | chordsym: chord symbols without dependencies — parse, pitch classes, keys, transpos...
+- [chordsym](_autosummary/chordsym.html.md): chordsym: chord symbols without dependencies — parse, pitch classes, keys, transposition.
+- [chordsym.keys](_autosummary/chordsym.keys.html.md): What a chord does in a key: estimate a song’s key from its chords, label chords by function.
+- [chordsym.parse](_autosummary/chordsym.parse.html.md): Read a chord symbol: is it one, what is its root and quality, which pitch classes it sounds.
+- [chordsym.transpose](_autosummary/chordsym.transpose.html.md): Move chord symbols by semitones, spelled for the target key.
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-27 04:22 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+
+## Optional
+
+- [chordsym.md](chordsym.md): Complete documentation in a single file.
+
+## Build
+
+- [build_info.json](build_info.json): build provenance (commit, version, tool versions, whether the docs match the package)

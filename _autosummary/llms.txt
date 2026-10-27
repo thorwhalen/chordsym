@@ -1,0 +1,15 @@
+# chordsym
+
+> Chord symbols without dependencies: parse, pitch classes, key estimation, transposition
+
+
+## Pages in this subsection
+
+- [chordsym](chordsym.html.md): chordsym: chord symbols without dependencies — parse, pitch classes, keys, transposition.
+- [chordsym.keys](chordsym.keys.html.md): What a chord does in a key: estimate a song’s key from its chords, label chords by function.
+- [chordsym.parse](chordsym.parse.html.md): Read a chord symbol: is it one, what is its root and quality, which pitch classes it sounds.
+- [chordsym.transpose](chordsym.transpose.html.md): Move chord symbols by semitones, spelled for the target key.
+
+## Optional
+
+- [Top-level llms.txt](../llms.txt): Complete documentation index.

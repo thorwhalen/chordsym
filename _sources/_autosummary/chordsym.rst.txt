@@ -1,0 +1,15 @@
+﻿chordsym
+========
+
+.. automodule:: chordsym
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   keys
+   parse
+   transpose

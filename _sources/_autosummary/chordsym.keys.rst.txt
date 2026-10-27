@@ -1,0 +1,19 @@
+chordsym.keys
+=============
+
+.. automodule:: chordsym.keys
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chord_function
+      estimate_key
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Key
+   
