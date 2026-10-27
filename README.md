@@ -1,0 +1,17 @@
+# chordsym
+
+Chord symbols without dependencies (standard library only): is this token a chord, which root and quality, which pitch classes, which key does a song's chord list suggest, and how do the chords read moved by N semitones.
+
+```python
+>>> from chordsym import parse_chord, chord_tones, transpose_chord, transposition_table, estimate_key
+>>> parse_chord("F#m7"), chord_tones("Cmaj7")
+((6, 'minor'), (0, 4, 7, 11))
+>>> transpose_chord("C/E", 3, flats=True)
+'Eb/G'
+>>> transposition_table(["G", "D", "Em", "C"], 3)["chords"]
+{'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}
+```
+
+It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+
+Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
