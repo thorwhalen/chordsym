@@ -28,6 +28,8 @@ dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["chordsym"]
+# Twin tooling (codegen, fixture runner) is for the repository, not for users.
+exclude = ["chordsym/_codegen.py", "chordsym/_fixtures.py"]
 
 [tool.hatch.build.targets.sdist]
 # The TypeScript twin ships to npm, not in the Python sdist; the fixtures do (tests read them).

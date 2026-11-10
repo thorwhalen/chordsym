@@ -22,6 +22,11 @@ _FLAT_MINOR_TONICS = frozenset(_grammar.FLAT_MINOR_TONICS)
 _TRANSPOSABLE_RE = _compile("transposable")
 
 
+def _check_semitones(semitones) -> None:
+    if isinstance(semitones, bool) or not isinstance(semitones, int):
+        raise TypeError(f"semitones must be an int, not {semitones!r}")
+
+
 def _pitch_class(name: str) -> int:
     return (_PITCH_CLASSES[name[0]] + _ACCIDENTALS[name[1:]]) % 12
 
@@ -62,6 +67,7 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
     >>> [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]
     ['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']
     """
+    _check_semitones(semitones)
     if semitones % 12 == 0 or parse_chord(symbol) is None:
         return symbol
     match = _TRANSPOSABLE_RE.fullmatch(symbol)
@@ -92,6 +98,7 @@ def transposition_table(
     >>> transposition_table(["G", "D", "Em", "C", "G"], 3)
     {'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}
     """
+    _check_semitones(semitones)
     symbols = list(symbols)
     key = key or estimate_key(symbols)
     target = Key((key.tonic + semitones) % 12, key.minor) if key else None

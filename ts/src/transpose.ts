@@ -8,7 +8,7 @@ import {
   FLAT_NAMES,
   SHARP_NAMES,
 } from "./grammar.generated.js";
-import { estimateKey, makeKey, type Key } from "./keys.js";
+import { checkKey, estimateKey, makeKey, type Key } from "./keys.js";
 import { mod, parseChord, pitchClass, whole } from "./parse.js";
 
 /** Groups: lead, root, rest, bass, tail. */
@@ -17,11 +17,20 @@ const TRANSPOSABLE_RE = whole("transposable");
 /** Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps. */
 export function usesFlats(key: Key | null | undefined): boolean {
   if (key == null) return false;
-  return (key.minor ? FLAT_MINOR_TONICS : FLAT_MAJOR_TONICS).includes(key.tonic);
+  const tonics: readonly number[] = key.minor ? FLAT_MINOR_TONICS : FLAT_MAJOR_TONICS;
+  return tonics.includes(checkKey(key).tonic);
+}
+
+/** Throws like Python: TypeError unless `semitones` is an integer. */
+function checkSemitones(semitones: number): void {
+  if (typeof semitones !== "number" || !Number.isInteger(semitones)) {
+    throw new TypeError(`chordsym: semitones must be an integer, not ${semitones}`);
+  }
 }
 
 /** "G", "Bb", "F#m": the key spelled as its tonic chord. */
 export function keyName(key: Key, options: { flats?: boolean | null } = {}): string {
+  checkKey(key);
   const flats = options.flats ?? usesFlats(key);
   return (flats ? FLAT_NAMES : SHARP_NAMES)[key.tonic] + (key.minor ? "m" : "");
 }
@@ -39,6 +48,7 @@ export function transposeChord(
   semitones: number,
   options: { flats?: boolean } = {},
 ): string {
+  checkSemitones(semitones);
   if (mod(semitones, 12) === 0 || parseChord(symbol) === null) return symbol;
   const match = TRANSPOSABLE_RE.exec(symbol);
   if (match === null) return symbol;
@@ -54,8 +64,11 @@ export interface TranspositionTable {
   semitones: number;
   /** The new key's name, "" when there are no chords. */
   key: string;
-  /** original -> transposed, over the distinct chords in order of first appearance. */
-  chords: Record<string, string>;
+  /**
+   * original -> transposed, over the distinct symbols in order of first appearance (a Map:
+   * a plain object would move integer-like keys first and mishandle "__proto__").
+   */
+  chords: Map<string, string>;
 }
 
 /** The chords of a song moved by `semitones`, spelled for the new key. */
@@ -64,11 +77,14 @@ export function transpositionTable(
   semitones: number,
   options: { key?: Key | null } = {},
 ): TranspositionTable {
+  checkSemitones(semitones);
   const list = [...symbols];
-  const key = options.key ?? estimateKey(list);
+  const key = options.key ? checkKey(options.key) : estimateKey(list);
   const target = key ? makeKey(mod(key.tonic + semitones, 12), key.minor) : null;
   const flats = usesFlats(target);
-  const chords: Record<string, string> = {};
-  for (const symbol of new Set(list)) chords[symbol] = transposeChord(symbol, semitones, { flats });
+  const chords = new Map<string, string>();
+  for (const symbol of list) {
+    if (!chords.has(symbol)) chords.set(symbol, transposeChord(symbol, semitones, { flats }));
+  }
   return { semitones, key: target ? keyName(target) : "", chords };
 }

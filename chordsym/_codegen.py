@@ -1,19 +1,27 @@
 """Write the shared grammar (``chordsym._grammar``) as the TypeScript twin's ``grammar.generated.ts``.
 
-Run ``python -m chordsym._codegen`` from the repository root after editing ``_grammar.py``;
-``tests/test_grammar.py`` fails while the committed TypeScript file differs from what this
-module renders.
+Every public UPPER_CASE name in ``_grammar`` is emitted (as a JSON literal, ``as const``),
+so a table added on the Python side reaches TypeScript without touching this module. It
+also emits ``WHITESPACE``, the code points Python's ``str.isspace`` accepts, which the
+TypeScript ``strip`` uses and against which the vitest suite checks the ``WS`` class.
 
->>> 'export const PATTERNS' in render_ts()
+Run ``python -m chordsym._codegen`` after editing ``_grammar.py``; ``tests/test_grammar.py``
+fails while the committed TypeScript file differs from what this module renders.
+
+>>> 'export const PATTERNS' in render_ts() and 'export const WHITESPACE' in render_ts()
 True
 """
 
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from chordsym import _grammar
+
+#: The repository root (where ``ts/`` lives, next to the package).
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 #: Where the TypeScript twin keeps the generated grammar, relative to the repository root.
 TS_GRAMMAR_PATH = Path("ts") / "src" / "grammar.generated.ts"
@@ -24,46 +32,36 @@ _HEADER = """\
 """
 
 
-def _js(value) -> str:
-    return json.dumps(value, ensure_ascii=False)
+def grammar_names() -> list[str]:
+    """The names ``_grammar`` shares: every public UPPER_CASE module attribute."""
+    return [n for n in vars(_grammar) if n.isupper() and not n.startswith("_")]
 
 
-def _int_keyed(table: dict[int, tuple[str, ...]]) -> str:
-    rows = ", ".join(f"{degree}: {_js(list(qs))}" for degree, qs in table.items())
-    return "{ " + rows + " }"
+def whitespace_code_points() -> list[int]:
+    """Every code point ``str.isspace`` accepts (what ``str.strip()`` removes)."""
+    return [c for c in range(sys.maxunicode + 1) if chr(c).isspace()]
+
+
+def _jsonable(value):
+    if isinstance(value, (tuple, list)):
+        return [_jsonable(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    return value
 
 
 def render_ts() -> str:
     """The TypeScript source of the shared grammar, exactly as it should be committed."""
-    g = _grammar
-    patterns = "\n".join(
-        f"  {name}: [{_js(source)}, {_js(flags)}],"
-        for name, (source, flags) in g.PATTERNS.items()
-    )
-    return (
-        _HEADER
-        + f"\nexport const WS: string = {_js(g.WS)};\n"
-        + '\n/** name -> [pattern source, flags]; flags "s" means dotAll. */\n'
-        + "export const PATTERNS: Readonly<Record<string, readonly [string, string]>> = {\n"
-        + patterns
-        + "\n};\n"
-        + f"\nexport const PITCH_CLASSES: Readonly<Record<string, number>> = {_js(g.PITCH_CLASSES)};\n"
-        + f"export const ACCIDENTALS: Readonly<Record<string, number>> = {_js(g.ACCIDENTALS)};\n"
-        + f"export const SHARP_NAMES: readonly string[] = {_js(list(g.SHARP_NAMES))};\n"
-        + f"export const FLAT_NAMES: readonly string[] = {_js(list(g.FLAT_NAMES))};\n"
-        + f"export const FLAT_MAJOR_TONICS: readonly number[] = {_js(list(g.FLAT_MAJOR_TONICS))};\n"
-        + f"export const FLAT_MINOR_TONICS: readonly number[] = {_js(list(g.FLAT_MINOR_TONICS))};\n"
-        + "export const MAJOR_KEY: Readonly<Record<number, readonly string[]>> = "
-        + _int_keyed(g.MAJOR_KEY)
-        + ";\n"
-        + "export const MINOR_KEY: Readonly<Record<number, readonly string[]>> = "
-        + _int_keyed(g.MINOR_KEY)
-        + ";\n"
-        + f"export const KEY_WEIGHTS: Readonly<Record<string, number>> = {_js(g.KEY_WEIGHTS)};\n"
-    )
+    shared = {name: getattr(_grammar, name) for name in grammar_names()}
+    shared["WHITESPACE"] = whitespace_code_points()
+    lines = [_HEADER]
+    for name, value in shared.items():
+        literal = json.dumps(_jsonable(value), ensure_ascii=False)
+        lines.append(f"export const {name} = {literal} as const;")
+    return "\n".join(lines) + "\n"
 
 
-def write_ts(root: Path | str = ".") -> Path:
+def write_ts(root: Path | str = REPO_ROOT) -> Path:
     """Write :func:`render_ts` to ``<root>/ts/src/grammar.generated.ts``; return the path."""
     path = Path(root) / TS_GRAMMAR_PATH
     path.write_text(render_ts(), encoding="utf-8")

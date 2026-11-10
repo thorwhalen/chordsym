@@ -8,7 +8,7 @@ import { chordTones, parseChord, transposeChord, transpositionTable, estimateKey
 parseChord("F#m7");                        // [6, "minor"]
 chordTones("Cmaj7");                       // [0, 4, 7, 11]  (pitch classes, C = 0)
 transposeChord("C/E", 3, { flats: true }); // "Eb/G"
-transpositionTable(["G", "D", "Em", "C"], 3).chords; // { G: "Bb", D: "F", Em: "Gm", C: "Eb" }
+transpositionTable(["G", "D", "Em", "C"], 3).chords; // Map { G → "Bb", D → "F", Em → "Gm", C → "Eb" }
 estimateKey(["Am", "Dm", "E7"]);           // { tonic: 9, minor: true }
 ```
 

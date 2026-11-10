@@ -16,16 +16,15 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
-    "types": [
-      "node"
-    ],
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "types": []
   },
   "include": [
     "src"
   ],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "src/**/*.test.ts"
   ]
 }

@@ -29,6 +29,12 @@ class Key:
     tonic: int
     minor: bool = False
 
+    def __post_init__(self):
+        if isinstance(self.tonic, bool) or not isinstance(self.tonic, int):
+            raise TypeError(f"Key tonic must be an int pitch class, not {self.tonic!r}")
+        if not 0 <= self.tonic < 12:
+            raise ValueError(f"Key tonic must be 0-11 (C = 0), not {self.tonic}")
+
 
 def _function(parsed: tuple[int, str], key: Key) -> str:
     root, quality = parsed
@@ -59,10 +65,14 @@ def estimate_key(symbols: Iterable[str]) -> Key | None:
     for tonic in range(12):
         for minor in (False, True):
             key = Key(tonic, minor)
-            score = sum(_WEIGHTS[_function(parsed, key)] for parsed in chords)
-            score += _WEIGHTS["ends"] * sum(
-                _function(parsed, key) == "tonic" for parsed in (chords[0], chords[-1])
-            )
+            # A plain left-to-right sum, as the TypeScript twin does: the builtin sum()
+            # compensates float rounding (Python 3.12+), which would break ties differently.
+            score = 0.0
+            for parsed in chords:
+                score += _WEIGHTS[_function(parsed, key)]
+            for parsed in (chords[0], chords[-1]):
+                if _function(parsed, key) == "tonic":
+                    score += _WEIGHTS["ends"]
             if score > best_score:
                 best, best_score = key, score
     return best

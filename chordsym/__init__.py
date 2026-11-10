@@ -13,3 +13,16 @@ from chordsym.transpose import (
     transposition_table,
     uses_flats,
 )
+
+__all__ = [
+    "Key",
+    "chord_function",
+    "chord_tones",
+    "estimate_key",
+    "is_chord_token",
+    "key_name",
+    "parse_chord",
+    "transpose_chord",
+    "transposition_table",
+    "uses_flats",
+]

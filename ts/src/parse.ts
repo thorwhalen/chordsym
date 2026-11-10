@@ -3,32 +3,28 @@
  * TypeScript twin of chordsym/parse.py; both read the same grammar and pass fixtures/cases.json.
  * A pitch class is an integer 0-11 (C = 0, C# = 1, ... B = 11).
  */
-import { ACCIDENTALS, PATTERNS, PITCH_CLASSES, WS } from "./grammar.generated.js";
+import { ACCIDENTALS, PATTERNS, PITCH_CLASSES, WHITESPACE } from "./grammar.generated.js";
 
 /** "open" is a suspended or power chord: no third. */
 export type Quality = "major" | "minor" | "diminished" | "open";
 
-function source(name: string): readonly [string, string] {
-  const entry = PATTERNS[name];
-  if (entry === undefined) throw new Error(`chordsym: no pattern named ${name}`);
-  return entry;
-}
+export type PatternName = keyof typeof PATTERNS;
 
 /** Python `re.fullmatch` */
-export function whole(name: string): RegExp {
-  const [src, flags] = source(name);
+export function whole(name: PatternName): RegExp {
+  const [src, flags] = PATTERNS[name];
   return new RegExp(`^(?:${src})$`, "u" + flags);
 }
 
 /** Python `re.match`: anchored at the start only (sticky; reset lastIndex before use). */
-function atStart(name: string): RegExp {
-  const [src, flags] = source(name);
+function atStart(name: PatternName): RegExp {
+  const [src, flags] = PATTERNS[name];
   return new RegExp(src, "uy" + flags);
 }
 
 /** Python `re.search` */
-function anywhere(name: string): RegExp {
-  const [src, flags] = source(name);
+function anywhere(name: PatternName): RegExp {
+  const [src, flags] = PATTERNS[name];
   return new RegExp(src, "u" + flags);
 }
 
@@ -47,11 +43,18 @@ const MAJOR_SEVENTH_RE = anywhere("major_seventh");
 const SEVENTH_RE = anywhere("seventh");
 const SIXTH_RE = anywhere("sixth");
 const NINTH_RE = anywhere("ninth");
-const STRIP_RE = new RegExp(`^[${WS}]+|[${WS}]+$`, "gu");
+const SPACES: ReadonlySet<number> = new Set(WHITESPACE);
 
-/** Python `str.strip()`: the same whitespace set on both sides. */
+/**
+ * Python `str.strip()`: removes exactly the characters `str.isspace` accepts (all in the
+ * BMP), in linear time (a `^\s+|\s+$` regex is quadratic on long runs of spaces).
+ */
 export function strip(text: string): string {
-  return text.replace(STRIP_RE, "");
+  let start = 0;
+  let end = text.length;
+  while (start < end && SPACES.has(text.charCodeAt(start))) start++;
+  while (end > start && SPACES.has(text.charCodeAt(end - 1))) end--;
+  return text.slice(start, end);
 }
 
 /** Python's `%`: the result has the divisor's sign, so pitch classes stay in 0-11. */
@@ -60,7 +63,12 @@ export function mod(n: number, m: number): number {
 }
 
 export function pitchClass(letter: string, accidental: string): number {
-  return mod((PITCH_CLASSES[letter] ?? NaN) + (ACCIDENTALS[accidental] ?? NaN), 12);
+  const natural = (PITCH_CLASSES as Record<string, number>)[letter];
+  const offset = (ACCIDENTALS as Record<string, number>)[accidental];
+  if (natural === undefined || offset === undefined) {
+    throw new RangeError(`chordsym: not a note name: ${letter}${accidental}`);
+  }
+  return mod(natural + offset, 12);
 }
 
 /** True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`). */

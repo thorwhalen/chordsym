@@ -12,7 +12,14 @@
  * estimateKey(["Am", "Dm", "E7"]);           // { tonic: 9, minor: true }
  */
 export { chordTones, isChordToken, parseChord, type Quality } from "./parse.js";
-export { chordFunction, estimateKey, makeKey, type ChordFunction, type Key } from "./keys.js";
+export {
+  chordFunction,
+  estimateKey,
+  keyEquals,
+  makeKey,
+  type ChordFunction,
+  type Key,
+} from "./keys.js";
 export {
   keyName,
   transposeChord,

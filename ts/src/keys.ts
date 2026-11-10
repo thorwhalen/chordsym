@@ -11,20 +11,41 @@ export interface Key {
   readonly minor: boolean;
 }
 
-export function makeKey(tonic: number, minor = false): Key {
-  return { tonic, minor };
+/** Throws like Python's `Key(...)`: TypeError for a non-integer tonic, RangeError outside 0-11. */
+export function checkKey(key: Key): Key {
+  if (typeof key.tonic !== "number" || !Number.isInteger(key.tonic)) {
+    throw new TypeError(`chordsym: Key tonic must be an integer pitch class, not ${key.tonic}`);
+  }
+  if (key.tonic < 0 || key.tonic > 11) {
+    throw new RangeError(`chordsym: Key tonic must be 0-11 (C = 0), not ${key.tonic}`);
+  }
+  return key;
 }
+
+export function makeKey(tonic: number, minor = false): Key {
+  return checkKey({ tonic, minor });
+}
+
+/** Python's `Key.__eq__`: same tonic and mode. */
+export function keyEquals(a: Key | null | undefined, b: Key | null | undefined): boolean {
+  if (a == null || b == null) return a == b;
+  return a.tonic === b.tonic && a.minor === b.minor;
+}
+
+const MAJOR: Readonly<Record<number, readonly string[]>> = MAJOR_KEY;
+const MINOR: Readonly<Record<number, readonly string[]>> = MINOR_KEY;
+const WEIGHTS: Readonly<Record<string, number>> = KEY_WEIGHTS;
 
 export type ChordFunction = "tonic" | "diatonic" | "outside";
 
 function weight(name: string): number {
-  return KEY_WEIGHTS[name] ?? 0;
+  return WEIGHTS[name] ?? 0;
 }
 
 function functionIn(parsed: [number, Quality], key: Key): ChordFunction {
   const [root, quality] = parsed;
   const degree = mod(root - key.tonic, 12);
-  const qualities = (key.minor ? MINOR_KEY : MAJOR_KEY)[degree];
+  const qualities = (key.minor ? MINOR : MAJOR)[degree];
   if (qualities === undefined || (quality !== "open" && !qualities.includes(quality))) {
     return "outside";
   }
@@ -33,6 +54,7 @@ function functionIn(parsed: [number, Quality], key: Key): ChordFunction {
 
 /** "tonic", "diatonic" or "outside" in `key`; null if `symbol` is not a chord. */
 export function chordFunction(symbol: string, key: Key): ChordFunction | null {
+  checkKey(key);
   const parsed = parseChord(symbol);
   return parsed === null ? null : functionIn(parsed, key);
 }
