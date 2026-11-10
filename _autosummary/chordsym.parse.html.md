@@ -26,7 +26,7 @@ The chord’s pitch classes, bass first (the root, or the bass of a slash chord)
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
 sevenths (`7`, `maj7`, `dim7`, `m7b5`), sixths and added ninths. `None`
-for what `chordsym.parse_chord()` does not read as a chord.
+for what [`chordsym.parse_chord()`](chordsym.html.md#chordsym.parse_chord) does not read as a chord.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)

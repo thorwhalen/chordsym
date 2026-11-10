@@ -11,7 +11,7 @@
 - [chordsym.keys](_autosummary/chordsym.keys.html.md): What a chord does in a key: estimate a song’s key from its chords, label chords by function.
 - [chordsym.parse](_autosummary/chordsym.parse.html.md): Read a chord symbol: is it one, what is its root and quality, which pitch classes it sounds.
 - [chordsym.transpose](_autosummary/chordsym.transpose.html.md): Move chord symbols by semitones, spelled for the target key.
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-27 04:22 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-10 07:43 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

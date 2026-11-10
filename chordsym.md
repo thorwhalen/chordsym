@@ -1,4 +1,4 @@
-> built 2026-10-27 04:22 UTC from f72001e (main) · chordsym 0.0.1. Details: build_info.json
+> built 2026-11-10 07:43 UTC from 4b7d910 (main) · chordsym 0.0.1. Details: build_info.json
 
 # index.html.md
 
@@ -20,6 +20,28 @@ Chord symbols without dependencies (standard library only): is this token a chor
 
 It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
 
+## In the browser: the TypeScript twin
+
+The same functions ship to npm as `chordsym` (in `ts/`), with camelCase names and keyword arguments as an options object:
+
+```ts
+import { parseChord, transposeChord, estimateKey } from "chordsym";
+
+parseChord("Am7");                         // [9, "minor"]
+transposeChord("C/E", 3, { flats: true }); // "Eb/G"
+estimateKey(["Am", "Dm", "E7"]);           // { tonic: 9, minor: true }
+```
+
+The two are kept identical by construction, not by care:
+
+- **One grammar.** Every regular expression and table lives in `chordsym/_grammar.py`, written in the subset of regex syntax that means the same in Python and JavaScript (no `\d`, `\s`, `\w`, `\b`). `python -m chordsym._codegen` writes it to `ts/src/grammar.generated.ts`, and a test fails if that file is stale.
+- **One set of golden cases.** `fixtures/cases.json` holds about 1,500 calls with their expected results, errors included (`ValueError` in Python is `RangeError` in TypeScript). pytest and vitest both run every one and compare them as JSON text, so order matters. To add a case, append it and run `python -m chordsym._fixtures`, which records the Python results; review the diff, since a changed expectation is a behaviour change on both sides.
+- **A wide net before releases.** `python scripts/twin_differential.py` (after `cd ts && npm run build`) runs about 75,000 generated chord spellings and 3,000 songs through both and reports any difference.
+
+Where the languages differ, the TypeScript side says so in its types: `transpositionTable(...).chords` is a `Map` (a plain object would reorder integer-like keys), and a `Key` is a plain `{ tonic, minor }` object checked by every function that takes one (`keyEquals` compares two).
+
+Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
+
 Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>
@@ -36,6 +58,149 @@ chordsym: chord symbols without dependencies — parse, pitch classes, keys, tra
 >>> parse_chord("Am7"), transpose_chord("Am7", 2), estimate_key(["Am", "Dm", "E7"])
 ((9, 'minor'), 'Bm7', Key(tonic=9, minor=True))
 ```
+
+### Functions
+
+| [`chord_function`](_autosummary/chordsym.html.md#chordsym.chord_function)(symbol, key)                        | `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.   |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`chord_tones`](_autosummary/chordsym.html.md#chordsym.chord_tones)(symbol)                                | The chord's pitch classes, bass first (the root, or the bass of a slash chord).     |
+| [`estimate_key`](_autosummary/chordsym.html.md#chordsym.estimate_key)(symbols)                              | The key that best explains a song's chords, in order; None if there are no chords.  |
+| [`is_chord_token`](_autosummary/chordsym.html.md#chordsym.is_chord_token)(token)                              | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).           |
+| [`key_name`](_autosummary/chordsym.html.md#chordsym.key_name)(key, \*[, flats])                         | `"G"`, `"Bb"`, `"F#m"`: the key spelled as its tonic chord.                         |
+| [`parse_chord`](_autosummary/chordsym.html.md#chordsym.parse_chord)(symbol)                                | `(root pitch class, quality)`, or None for what is not a chord.                     |
+| [`transpose_chord`](_autosummary/chordsym.html.md#chordsym.transpose_chord)(symbol, semitones, \*[, flats])    | `symbol` moved by `semitones`: root and bass move, the rest is kept as written.     |
+| [`transposition_table`](_autosummary/chordsym.html.md#chordsym.transposition_table)(symbols, semitones, \*[, key]) | The chords of a song moved by `semitones`, spelled for the new key.                 |
+| [`uses_flats`](_autosummary/chordsym.html.md#chordsym.uses_flats)(key)                                    | Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.         |
+
+### Classes
+
+| [`Key`](_autosummary/chordsym.html.md#chordsym.Key)(tonic[, minor])   | A key: its tonic as a pitch class (C = 0, C# = 1, .   |
+|------------------------------------------------------------------------|-------------------------------------------------------|
+
+### *class* chordsym.Key(tonic, minor=False)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A key: its tonic as a pitch class (C = 0, C# = 1, … B = 11), major or minor.
+
+### chordsym.chord_function(symbol, key)
+
+`"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.chord_tones(symbol)
+
+The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
+
+Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
+sevenths (`7`, `maj7`, `dim7`, `m7b5`), sixths and added ninths. `None`
+for what [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) does not read as a chord.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.estimate_key(symbols)
+
+The key that best explains a song’s chords, in order; None if there are no chords.
+
+Each chord scores for a key when it belongs to it, and more when it is its
+tonic; a song that starts or ends on a key’s tonic chord scores extra for
+that key. Ties go to the major key, and to the lower tonic.
+
+* **Return type:**
+  [`Key`](_autosummary/chordsym.keys.html.md#chordsym.keys.Key) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.is_chord_token(token)
+
+True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).
+
+```pycon
+>>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
+(True, True, False)
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### chordsym.key_name(key, , flats=None)
+
+`"G"`, `"Bb"`, `"F#m"`: the key spelled as its tonic chord.
+
+```pycon
+>>> key_name(Key(10)), key_name(Key(6, minor=True)), key_name(Key(6, minor=True), flats=True)
+('Bb', 'F#m', 'Gbm')
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### chordsym.parse_chord(symbol)
+
+`(root pitch class, quality)`, or None for what is not a chord.
+
+The quality is `"major"`, `"minor"`, `"diminished"`, or `"open"` (a
+suspended or power chord, which has no third). A bass note is ignored. What
+the chart parser would not read as a chord ([`is_chord_token()`](_autosummary/chordsym.html.md#chordsym.is_chord_token)) is not one.
+
+```pycon
+>>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
+((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
+>>> parse_chord("C-7"), parse_chord("Bridge")
+((0, 'minor'), None)
+```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.transpose_chord(symbol, semitones, , flats=False)
+
+`symbol` moved by `semitones`: root and bass move, the rest is kept as written.
+
+`flats` spells moved notes with flats (choose it from the target key with
+[`uses_flats()`](_autosummary/chordsym.html.md#chordsym.uses_flats)). What is not a chord comes back unchanged.
+
+```pycon
+>>> transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)
+('A', 'Gm7', 'Eb/G')
+>>> transpose_chord("Bbmaj7", -1, flats=True), transpose_chord("N.C.", 4), transpose_chord("Am", 0)
+('Amaj7', 'N.C.', 'Am')
+>>> [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]
+['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### chordsym.transposition_table(symbols, semitones, , key=None)
+
+The chords of a song moved by `semitones`, spelled for the new key.
+
+`symbols` are the song’s chords in order (they give the key when `key` is
+not given). Returns `{"semitones", "key", "chords"}`: the new key’s name
+(`""` when there are no chords) and `{original: transposed}` over the
+distinct chords, in order of first appearance.
+
+```pycon
+>>> transposition_table(["G", "D", "Em", "C", "G"], 3)
+{'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### chordsym.uses_flats(key)
+
+Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
+
+```pycon
+>>> uses_flats(Key(5)), uses_flats(Key(7)), uses_flats(Key(2, minor=True)), uses_flats(None)
+(True, False, True, False)
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### Modules
 
@@ -127,7 +292,7 @@ The chord’s pitch classes, bass first (the root, or the bass of a slash chord)
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
 sevenths (`7`, `maj7`, `dim7`, `m7b5`), sixths and added ninths. `None`
-for what `chordsym.parse_chord()` does not read as a chord.
+for what [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) does not read as a chord.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -251,7 +416,7 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-10-27 04:22 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/f72001ef8188853262bcd1008b43553242986dfd"><code>f72001e</code></a> on branch <code>main</code>, for **chordsym 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-10 07:43 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f"><code>4b7d910</code></a> on branch <code>main</code>, for **chordsym 0.0.1** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -260,7 +425,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/f72001ef8188853262bcd1008b43553242986dfd"><code>f72001ef8188853262bcd1008b43553242986dfd</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f"><code>4b7d91046947af87bbf59c5cf49f5618986c9c2f</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -271,9 +436,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/40449251716">40449251716</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42777110206">42777110206</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>f72001ef8188853262bcd1008b43553242986dfd</code> (in the history of the built commit) |
+| Event commit | <code>4b7d91046947af87bbf59c5cf49f5618986c9c2f</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -282,7 +447,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.22  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
-| Python   | 3.12.15 |
+| Python   | 3.12.16 |
 
 ## Configuration as resolved
 
@@ -304,7 +469,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout f72001ef8188853262bcd1008b43553242986dfd
+git checkout 4b7d91046947af87bbf59c5cf49f5618986c9c2f
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

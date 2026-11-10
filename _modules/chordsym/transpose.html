@@ -125,74 +125,74 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="8">
 </span><span data-line="9"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 </span><span data-line="10">
-</span><span data-line="11"><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-</span><span data-line="12"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
-</span><span data-line="13">
+</span><span data-line="11"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="kn">from</span><span class="w"> </span><span class="nn">chordsym</span><span class="w"> </span><span class="kn">import</span> <span class="n">_grammar</span>
 </span><span data-line="14"><span class="kn">from</span><span class="w"> </span><span class="nn">chordsym.keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">Key</span><span class="p">,</span> <span class="n">estimate_key</span>
-</span><span data-line="15"><span class="kn">from</span><span class="w"> </span><span class="nn">chordsym.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ACCIDENTALS</span><span class="p">,</span> <span class="n">_PITCH_CLASSES</span><span class="p">,</span> <span class="n">parse_chord</span>
+</span><span data-line="15"><span class="kn">from</span><span class="w"> </span><span class="nn">chordsym.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ACCIDENTALS</span><span class="p">,</span> <span class="n">_PITCH_CLASSES</span><span class="p">,</span> <span class="n">_compile</span><span class="p">,</span> <span class="n">parse_chord</span>
 </span><span data-line="16">
-</span><span data-line="17"><span class="n">_SHARP_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"C"</span><span class="p">,</span> <span class="s2">"C#"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"D#"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"F#"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"G#"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"A#"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">)</span>
-</span><span data-line="18"><span class="n">_FLAT_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"C"</span><span class="p">,</span> <span class="s2">"Db"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"Eb"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"Gb"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"Ab"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"Bb"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">)</span>
-</span><span data-line="19"><span class="c1">#: Keys whose signatures use flats (as tonic pitch classes): F Bb Eb Ab Db Gb, d g c f bb eb.</span>
-</span><span data-line="20"><span class="n">_FLAT_MAJOR_TONICS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">})</span>
-</span><span data-line="21"><span class="n">_FLAT_MINOR_TONICS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">})</span>
-</span><span data-line="22"><span class="c1">#: The bass is only a final ``/note`` (``D/F#``); a slash inside the extension (``C6/9``,</span>
-</span><span data-line="23"><span class="c1">#: ``Bm5-/7``) belongs to the chord's suffix.</span>
-</span><span data-line="24"><span class="n">_TRANSPOSABLE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-</span><span data-line="25">    <span class="sa">r</span><span class="s2">"(?P&lt;lead&gt;[*.(\s]*)(?P&lt;root&gt;[A-G][#b]?)(?P&lt;rest&gt;.*?)"</span>
-</span><span data-line="26">    <span class="sa">r</span><span class="s2">"(?:/(?P&lt;bass&gt;[A-G][#b]?)(?P&lt;tail&gt;[^/A-Za-z0-9#]*))?"</span><span class="p">,</span>
-</span><span data-line="27">    <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">,</span>
-</span><span data-line="28"><span class="p">)</span>
+</span><span data-line="17"><span class="n">_SHARP_NAMES</span> <span class="o">=</span> <span class="n">_grammar</span><span class="o">.</span><span class="n">SHARP_NAMES</span>
+</span><span data-line="18"><span class="n">_FLAT_NAMES</span> <span class="o">=</span> <span class="n">_grammar</span><span class="o">.</span><span class="n">FLAT_NAMES</span>
+</span><span data-line="19"><span class="n">_FLAT_MAJOR_TONICS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">_grammar</span><span class="o">.</span><span class="n">FLAT_MAJOR_TONICS</span><span class="p">)</span>
+</span><span data-line="20"><span class="n">_FLAT_MINOR_TONICS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">_grammar</span><span class="o">.</span><span class="n">FLAT_MINOR_TONICS</span><span class="p">)</span>
+</span><span data-line="21"><span class="c1">#: Groups: lead, root, rest, bass, tail.</span>
+</span><span data-line="22"><span class="n">_TRANSPOSABLE_RE</span> <span class="o">=</span> <span class="n">_compile</span><span class="p">(</span><span class="s2">"transposable"</span><span class="p">)</span>
+</span><span data-line="23">
+</span><span data-line="24">
+</span><span data-line="25"><span class="k">def</span><span class="w"> </span><span class="nf">_check_semitones</span><span class="p">(</span><span class="n">semitones</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="26">    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">semitones</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">semitones</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span data-line="27">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"semitones must be an int, not </span><span class="si">{</span><span class="n">semitones</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="28">
 </span><span data-line="29">
-</span><span data-line="30">
-</span><span data-line="31"><span class="k">def</span><span class="w"> </span><span class="nf">_pitch_class</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span data-line="32">    <span class="k">return</span> <span class="p">(</span><span class="n">_PITCH_CLASSES</span><span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">_ACCIDENTALS</span><span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span> <span class="o">%</span> <span class="mi">12</span>
+</span><span data-line="30"><span class="k">def</span><span class="w"> </span><span class="nf">_pitch_class</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="31">    <span class="k">return</span> <span class="p">(</span><span class="n">_PITCH_CLASSES</span><span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">_ACCIDENTALS</span><span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span> <span class="o">%</span> <span class="mi">12</span>
+</span><span data-line="32">
 </span><span data-line="33">
-</span><span data-line="34">
 <div class="viewcode-block" id="uses_flats">
-<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.transpose.uses_flats">[docs]</a>
-</span><span data-line="35"><span class="k">def</span><span class="w"> </span><span class="nf">uses_flats</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Key</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span data-line="36"><span class="w">    </span><span class="sd">"""Whether chords in ``key`` are spelled with flats (Bb, Eb) rather than sharps.</span>
-</span><span data-line="37">
-</span><span data-line="38"><span class="sd">    &gt;&gt;&gt; uses_flats(Key(5)), uses_flats(Key(7)), uses_flats(Key(2, minor=True)), uses_flats(None)</span>
-</span><span data-line="39"><span class="sd">    (True, False, True, False)</span>
-</span><span data-line="40"><span class="sd">    """</span>
-</span><span data-line="41">    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="42">        <span class="k">return</span> <span class="kc">False</span>
-</span><span data-line="43">    <span class="k">return</span> <span class="n">key</span><span class="o">.</span><span class="n">tonic</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_FLAT_MINOR_TONICS</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="n">_FLAT_MAJOR_TONICS</span><span class="p">)</span></div>
+<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.uses_flats">[docs]</a>
+</span><span data-line="34"><span class="k">def</span><span class="w"> </span><span class="nf">uses_flats</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Key</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="35"><span class="w">    </span><span class="sd">"""Whether chords in ``key`` are spelled with flats (Bb, Eb) rather than sharps.</span>
+</span><span data-line="36">
+</span><span data-line="37"><span class="sd">    &gt;&gt;&gt; uses_flats(Key(5)), uses_flats(Key(7)), uses_flats(Key(2, minor=True)), uses_flats(None)</span>
+</span><span data-line="38"><span class="sd">    (True, False, True, False)</span>
+</span><span data-line="39"><span class="sd">    """</span>
+</span><span data-line="40">    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="41">        <span class="k">return</span> <span class="kc">False</span>
+</span><span data-line="42">    <span class="k">return</span> <span class="n">key</span><span class="o">.</span><span class="n">tonic</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_FLAT_MINOR_TONICS</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="n">_FLAT_MAJOR_TONICS</span><span class="p">)</span></div>
 
+</span><span data-line="43">
 </span><span data-line="44">
-</span><span data-line="45">
 <div class="viewcode-block" id="key_name">
-<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.transpose.key_name">[docs]</a>
-</span><span data-line="46"><span class="k">def</span><span class="w"> </span><span class="nf">key_name</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Key</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="47"><span class="w">    </span><span class="sd">"""``"G"``, ``"Bb"``, ``"F#m"``: the key spelled as its tonic chord.</span>
-</span><span data-line="48">
-</span><span data-line="49"><span class="sd">    &gt;&gt;&gt; key_name(Key(10)), key_name(Key(6, minor=True)), key_name(Key(6, minor=True), flats=True)</span>
-</span><span data-line="50"><span class="sd">    ('Bb', 'F#m', 'Gbm')</span>
-</span><span data-line="51"><span class="sd">    """</span>
-</span><span data-line="52">    <span class="n">flats</span> <span class="o">=</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="n">flats</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">flats</span>
-</span><span data-line="53">    <span class="k">return</span> <span class="p">(</span><span class="n">_FLAT_NAMES</span> <span class="k">if</span> <span class="n">flats</span> <span class="k">else</span> <span class="n">_SHARP_NAMES</span><span class="p">)[</span><span class="n">key</span><span class="o">.</span><span class="n">tonic</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
-</span><span data-line="54">        <span class="s2">"m"</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="s2">""</span>
-</span><span data-line="55">    <span class="p">)</span></div>
+<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.key_name">[docs]</a>
+</span><span data-line="45"><span class="k">def</span><span class="w"> </span><span class="nf">key_name</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Key</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="46"><span class="w">    </span><span class="sd">"""``"G"``, ``"Bb"``, ``"F#m"``: the key spelled as its tonic chord.</span>
+</span><span data-line="47">
+</span><span data-line="48"><span class="sd">    &gt;&gt;&gt; key_name(Key(10)), key_name(Key(6, minor=True)), key_name(Key(6, minor=True), flats=True)</span>
+</span><span data-line="49"><span class="sd">    ('Bb', 'F#m', 'Gbm')</span>
+</span><span data-line="50"><span class="sd">    """</span>
+</span><span data-line="51">    <span class="n">flats</span> <span class="o">=</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="n">flats</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">flats</span>
+</span><span data-line="52">    <span class="k">return</span> <span class="p">(</span><span class="n">_FLAT_NAMES</span> <span class="k">if</span> <span class="n">flats</span> <span class="k">else</span> <span class="n">_SHARP_NAMES</span><span class="p">)[</span><span class="n">key</span><span class="o">.</span><span class="n">tonic</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+</span><span data-line="53">        <span class="s2">"m"</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span> <span class="k">else</span> <span class="s2">""</span>
+</span><span data-line="54">    <span class="p">)</span></div>
 
+</span><span data-line="55">
 </span><span data-line="56">
-</span><span data-line="57">
 <div class="viewcode-block" id="transpose_chord">
-<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.transpose.transpose_chord">[docs]</a>
-</span><span data-line="58"><span class="k">def</span><span class="w"> </span><span class="nf">transpose_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">semitones</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="59"><span class="w">    </span><span class="sd">"""``symbol`` moved by ``semitones``: root and bass move, the rest is kept as written.</span>
-</span><span data-line="60">
-</span><span data-line="61"><span class="sd">    ``flats`` spells moved notes with flats (choose it from the target key with</span>
-</span><span data-line="62"><span class="sd">    :func:`uses_flats`). What is not a chord comes back unchanged.</span>
-</span><span data-line="63">
-</span><span data-line="64"><span class="sd">    &gt;&gt;&gt; transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)</span>
-</span><span data-line="65"><span class="sd">    ('A', 'Gm7', 'Eb/G')</span>
-</span><span data-line="66"><span class="sd">    &gt;&gt;&gt; transpose_chord("Bbmaj7", -1, flats=True), transpose_chord("N.C.", 4), transpose_chord("Am", 0)</span>
-</span><span data-line="67"><span class="sd">    ('Amaj7', 'N.C.', 'Am')</span>
-</span><span data-line="68"><span class="sd">    &gt;&gt;&gt; [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]</span>
-</span><span data-line="69"><span class="sd">    ['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']</span>
-</span><span data-line="70"><span class="sd">    """</span>
+<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.transpose_chord">[docs]</a>
+</span><span data-line="57"><span class="k">def</span><span class="w"> </span><span class="nf">transpose_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">semitones</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="58"><span class="w">    </span><span class="sd">"""``symbol`` moved by ``semitones``: root and bass move, the rest is kept as written.</span>
+</span><span data-line="59">
+</span><span data-line="60"><span class="sd">    ``flats`` spells moved notes with flats (choose it from the target key with</span>
+</span><span data-line="61"><span class="sd">    :func:`uses_flats`). What is not a chord comes back unchanged.</span>
+</span><span data-line="62">
+</span><span data-line="63"><span class="sd">    &gt;&gt;&gt; transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)</span>
+</span><span data-line="64"><span class="sd">    ('A', 'Gm7', 'Eb/G')</span>
+</span><span data-line="65"><span class="sd">    &gt;&gt;&gt; transpose_chord("Bbmaj7", -1, flats=True), transpose_chord("N.C.", 4), transpose_chord("Am", 0)</span>
+</span><span data-line="66"><span class="sd">    ('Amaj7', 'N.C.', 'Am')</span>
+</span><span data-line="67"><span class="sd">    &gt;&gt;&gt; [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]</span>
+</span><span data-line="68"><span class="sd">    ['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']</span>
+</span><span data-line="69"><span class="sd">    """</span>
+</span><span data-line="70">    <span class="n">_check_semitones</span><span class="p">(</span><span class="n">semitones</span><span class="p">)</span>
 </span><span data-line="71">    <span class="k">if</span> <span class="n">semitones</span> <span class="o">%</span> <span class="mi">12</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">parse_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="72">        <span class="k">return</span> <span class="n">symbol</span>
 </span><span data-line="73">    <span class="n">match</span> <span class="o">=</span> <span class="n">_TRANSPOSABLE_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
@@ -203,16 +203,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="78">    <span class="k">def</span><span class="w"> </span><span class="nf">moved</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span data-line="79">        <span class="k">return</span> <span class="n">names</span><span class="p">[(</span><span class="n">_pitch_class</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="n">semitones</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span><span class="p">]</span>
 </span><span data-line="80">
-</span><span data-line="81">    <span class="n">parts</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
-</span><span data-line="82">    <span class="n">out</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="s2">"lead"</span><span class="p">]</span> <span class="o">+</span> <span class="n">moved</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"root"</span><span class="p">])</span> <span class="o">+</span> <span class="n">parts</span><span class="p">[</span><span class="s2">"rest"</span><span class="p">]</span>
-</span><span data-line="83">    <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="s2">"bass"</span><span class="p">]:</span>
-</span><span data-line="84">        <span class="n">out</span> <span class="o">+=</span> <span class="s2">"/"</span> <span class="o">+</span> <span class="n">moved</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"bass"</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"tail"</span><span class="p">]</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+</span><span data-line="81">    <span class="n">lead</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">rest</span><span class="p">,</span> <span class="n">bass</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+</span><span data-line="82">    <span class="n">out</span> <span class="o">=</span> <span class="n">lead</span> <span class="o">+</span> <span class="n">moved</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">+</span> <span class="n">rest</span>
+</span><span data-line="83">    <span class="k">if</span> <span class="n">bass</span><span class="p">:</span>
+</span><span data-line="84">        <span class="n">out</span> <span class="o">+=</span> <span class="s2">"/"</span> <span class="o">+</span> <span class="n">moved</span><span class="p">(</span><span class="n">bass</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">tail</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
 </span><span data-line="85">    <span class="k">return</span> <span class="n">out</span></div>
 
 </span><span data-line="86">
 </span><span data-line="87">
 <div class="viewcode-block" id="transposition_table">
-<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.transpose.transposition_table">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/chordsym.transpose.html#chordsym.transposition_table">[docs]</a>
 </span><span data-line="88"><span class="k">def</span><span class="w"> </span><span class="nf">transposition_table</span><span class="p">(</span>
 </span><span data-line="89">    <span class="n">symbols</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">semitones</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Key</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span data-line="90"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -226,19 +226,20 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="98"><span class="sd">    &gt;&gt;&gt; transposition_table(["G", "D", "Em", "C", "G"], 3)</span>
 </span><span data-line="99"><span class="sd">    {'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}</span>
 </span><span data-line="100"><span class="sd">    """</span>
-</span><span data-line="101">    <span class="n">symbols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
-</span><span data-line="102">    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">or</span> <span class="n">estimate_key</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
-</span><span data-line="103">    <span class="n">target</span> <span class="o">=</span> <span class="n">Key</span><span class="p">((</span><span class="n">key</span><span class="o">.</span><span class="n">tonic</span> <span class="o">+</span> <span class="n">semitones</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span><span class="p">)</span> <span class="k">if</span> <span class="n">key</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span data-line="104">    <span class="n">flats</span> <span class="o">=</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-</span><span data-line="105">    <span class="n">chords</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="106">        <span class="n">symbol</span><span class="p">:</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">semitones</span><span class="p">,</span> <span class="n">flats</span><span class="o">=</span><span class="n">flats</span><span class="p">)</span>
-</span><span data-line="107">        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
-</span><span data-line="108">    <span class="p">}</span>
-</span><span data-line="109">    <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="110">        <span class="s2">"semitones"</span><span class="p">:</span> <span class="n">semitones</span><span class="p">,</span>
-</span><span data-line="111">        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key_name</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="k">if</span> <span class="n">target</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span>
-</span><span data-line="112">        <span class="s2">"chords"</span><span class="p">:</span> <span class="n">chords</span><span class="p">,</span>
-</span><span data-line="113">    <span class="p">}</span></div>
+</span><span data-line="101">    <span class="n">_check_semitones</span><span class="p">(</span><span class="n">semitones</span><span class="p">)</span>
+</span><span data-line="102">    <span class="n">symbols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+</span><span data-line="103">    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">or</span> <span class="n">estimate_key</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+</span><span data-line="104">    <span class="n">target</span> <span class="o">=</span> <span class="n">Key</span><span class="p">((</span><span class="n">key</span><span class="o">.</span><span class="n">tonic</span> <span class="o">+</span> <span class="n">semitones</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">minor</span><span class="p">)</span> <span class="k">if</span> <span class="n">key</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span data-line="105">    <span class="n">flats</span> <span class="o">=</span> <span class="n">uses_flats</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+</span><span data-line="106">    <span class="n">chords</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="107">        <span class="n">symbol</span><span class="p">:</span> <span class="n">transpose_chord</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">semitones</span><span class="p">,</span> <span class="n">flats</span><span class="o">=</span><span class="n">flats</span><span class="p">)</span>
+</span><span data-line="108">        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+</span><span data-line="109">    <span class="p">}</span>
+</span><span data-line="110">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="111">        <span class="s2">"semitones"</span><span class="p">:</span> <span class="n">semitones</span><span class="p">,</span>
+</span><span data-line="112">        <span class="s2">"key"</span><span class="p">:</span> <span class="n">key_name</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="k">if</span> <span class="n">target</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="113">        <span class="s2">"chords"</span><span class="p">:</span> <span class="n">chords</span><span class="p">,</span>
+</span><span data-line="114">    <span class="p">}</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">

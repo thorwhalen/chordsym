@@ -16,6 +16,28 @@ Chord symbols without dependencies (standard library only): is this token a chor
 
 It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
 
+## In the browser: the TypeScript twin
+
+The same functions ship to npm as `chordsym` (in `ts/`), with camelCase names and keyword arguments as an options object:
+
+```ts
+import { parseChord, transposeChord, estimateKey } from "chordsym";
+
+parseChord("Am7");                         // [9, "minor"]
+transposeChord("C/E", 3, { flats: true }); // "Eb/G"
+estimateKey(["Am", "Dm", "E7"]);           // { tonic: 9, minor: true }
+```
+
+The two are kept identical by construction, not by care:
+
+- **One grammar.** Every regular expression and table lives in `chordsym/_grammar.py`, written in the subset of regex syntax that means the same in Python and JavaScript (no `\d`, `\s`, `\w`, `\b`). `python -m chordsym._codegen` writes it to `ts/src/grammar.generated.ts`, and a test fails if that file is stale.
+- **One set of golden cases.** `fixtures/cases.json` holds about 1,500 calls with their expected results, errors included (`ValueError` in Python is `RangeError` in TypeScript). pytest and vitest both run every one and compare them as JSON text, so order matters. To add a case, append it and run `python -m chordsym._fixtures`, which records the Python results; review the diff, since a changed expectation is a behaviour change on both sides.
+- **A wide net before releases.** `python scripts/twin_differential.py` (after `cd ts && npm run build`) runs about 75,000 generated chord spellings and 3,000 songs through both and reports any difference.
+
+Where the languages differ, the TypeScript side says so in its types: `transpositionTable(...).chords` is a `Map` (a plain object would reorder integer-like keys), and a `Key` is a plain `{ tonic, minor }` object checked by every function that takes one (`keyEquals` compares two).
+
+Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
+
 Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>

@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-10-27 04:22 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/f72001ef8188853262bcd1008b43553242986dfd"><code>f72001e</code></a> on branch <code>main</code>, for **chordsym 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-10 07:43 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f"><code>4b7d910</code></a> on branch <code>main</code>, for **chordsym 0.0.1** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,7 +11,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/f72001ef8188853262bcd1008b43553242986dfd"><code>f72001ef8188853262bcd1008b43553242986dfd</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f"><code>4b7d91046947af87bbf59c5cf49f5618986c9c2f</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -22,9 +22,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/40449251716">40449251716</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42777110206">42777110206</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>f72001ef8188853262bcd1008b43553242986dfd</code> (in the history of the built commit) |
+| Event commit | <code>4b7d91046947af87bbf59c5cf49f5618986c9c2f</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -33,7 +33,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.22  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
-| Python   | 3.12.15 |
+| Python   | 3.12.16 |
 
 ## Configuration as resolved
 
@@ -55,7 +55,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout f72001ef8188853262bcd1008b43553242986dfd
+git checkout 4b7d91046947af87bbf59c5cf49f5618986c9c2f
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

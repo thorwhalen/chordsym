@@ -84,7 +84,10 @@ data-aria-dark="Switch to auto color mode">
     <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
       <i class="i-lucide close"></i>
     </button>
-    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#in-the-browser-the-typescript-twin">In the browser: the TypeScript twin</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
   <main class="sy-main w-full max-sm:max-w-full print:pt-6">
@@ -123,13 +126,32 @@ data-aria-dark="Switch to auto color mode">
 </span></pre></div>
 </div>
 <p>It reads the spellings found in scraped chord charts (<code class="docutils literal notranslate"><span class="pre">C6/9</span></code>, <code class="docutils literal notranslate"><span class="pre">Bm5-/7</span></code>, Brazilian <code class="docutils literal notranslate"><span class="pre">7M</span></code>, <code class="docutils literal notranslate"><span class="pre">E7(#9)</span></code>, <code class="docutils literal notranslate"><span class="pre">D/F#</span></code>), not only textbook ones. Pitch classes are ints 0-11 (C = 0).</p>
+<section id="in-the-browser-the-typescript-twin">
+<h2>In the browser: the TypeScript twin<a class="headerlink" href="#in-the-browser-the-typescript-twin" title="Link to this heading">#</a></h2>
+<p>The same functions ship to npm as <code class="docutils literal notranslate"><span class="pre">chordsym</span></code> (in <code class="docutils literal notranslate"><span class="pre">ts/</span></code>), with camelCase names and keyword arguments as an options object:</p>
+<div class="highlight-ts notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">parseChord</span><span class="p">,</span><span class="w"> </span><span class="nx">transposeChord</span><span class="p">,</span><span class="w"> </span><span class="nx">estimateKey</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">"chordsym"</span><span class="p">;</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="nx">parseChord</span><span class="p">(</span><span class="s2">"Am7"</span><span class="p">);</span><span class="w">                         </span><span class="c1">// [9, "minor"]</span>
+</span><span data-line="4"><span class="nx">transposeChord</span><span class="p">(</span><span class="s2">"C/E"</span><span class="p">,</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">flats</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="w"> </span><span class="p">});</span><span class="w"> </span><span class="c1">// "Eb/G"</span>
+</span><span data-line="5"><span class="nx">estimateKey</span><span class="p">([</span><span class="s2">"Am"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Dm"</span><span class="p">,</span><span class="w"> </span><span class="s2">"E7"</span><span class="p">]);</span><span class="w">           </span><span class="c1">// { tonic: 9, minor: true }</span>
+</span></pre></div>
+</div>
+<p>The two are kept identical by construction, not by care:</p>
+<ul class="simple">
+<li><p><strong>One grammar.</strong> Every regular expression and table lives in <code class="docutils literal notranslate"><span class="pre">chordsym/_grammar.py</span></code>, written in the subset of regex syntax that means the same in Python and JavaScript (no <code class="docutils literal notranslate"><span class="pre">\d</span></code>, <code class="docutils literal notranslate"><span class="pre">\s</span></code>, <code class="docutils literal notranslate"><span class="pre">\w</span></code>, <code class="docutils literal notranslate"><span class="pre">\b</span></code>). <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">chordsym._codegen</span></code> writes it to <code class="docutils literal notranslate"><span class="pre">ts/src/grammar.generated.ts</span></code>, and a test fails if that file is stale.</p></li>
+<li><p><strong>One set of golden cases.</strong> <code class="docutils literal notranslate"><span class="pre">fixtures/cases.json</span></code> holds about 1,500 calls with their expected results, errors included (<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> in Python is <code class="docutils literal notranslate"><span class="pre">RangeError</span></code> in TypeScript). pytest and vitest both run every one and compare them as JSON text, so order matters. To add a case, append it and run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">chordsym._fixtures</span></code>, which records the Python results; review the diff, since a changed expectation is a behaviour change on both sides.</p></li>
+<li><p><strong>A wide net before releases.</strong> <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">scripts/twin_differential.py</span></code> (after <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">ts</span> <span class="pre">&amp;&amp;</span> <span class="pre">npm</span> <span class="pre">run</span> <span class="pre">build</span></code>) runs about 75,000 generated chord spellings and 3,000 songs through both and reports any difference.</p></li>
+</ul>
+<p>Where the languages differ, the TypeScript side says so in its types: <code class="docutils literal notranslate"><span class="pre">transpositionTable(...).chords</span></code> is a <code class="docutils literal notranslate"><span class="pre">Map</span></code> (a plain object would reorder integer-like keys), and a <code class="docutils literal notranslate"><span class="pre">Key</span></code> is a plain <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">tonic,</span> <span class="pre">minor</span> <span class="pre">}</span></code> object checked by every function that takes one (<code class="docutils literal notranslate"><span class="pre">keyEquals</span></code> compares two).</p>
+<p>Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so <code class="docutils literal notranslate"><span class="pre">chordsym&#64;X.Y.Z</span></code> on npm and PyPI are the same behaviour).</p>
 <p>Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.</p>
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>
 <div class="toctree-wrapper compound">
 </div>
 </section>
+</section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-27 04:22 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/f72001ef8188853262bcd1008b43553242986dfd">f72001e</a> (main) · chordsym 0.0.1 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-10 07:43 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f">4b7d910</a> (main) · chordsym 0.0.1 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
