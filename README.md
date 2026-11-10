@@ -34,6 +34,18 @@ The two are kept identical by construction, not by care:
 
 Where the languages differ, the TypeScript side says so in its types: `transpositionTable(...).chords` is a `Map` (a plain object would reorder integer-like keys), and a `Key` is a plain `{ tonic, minor }` object checked by every function that takes one (`keyEquals` compares two).
 
+- **CI runs a slice of that net.** `python scripts/twin_differential.py --sample-into-fixtures 500` refreshes 2,500 seeded corpus cases inside `fixtures/cases.json` (tagged `"source": "corpus"`), next to the hand-written ones.
+
+Traps the port had to handle, worth knowing before writing any Python/TypeScript twin:
+
+- `%` keeps the sign of the dividend in JS (`-1 % 12 === -1`), of the divisor in Python: use a `mod` helper.
+- A JS object reorders integer-like keys (`"2"`, `"10"` come first) and treats `"__proto__"` specially: an ordered mapping is a `Map`.
+- `re.match` anchors at the start only; in JS that is a sticky (`y`) regex whose `lastIndex` must be reset. `re.fullmatch` is `^(?:…)$`.
+- Python's `\d`, `\s` and `\w` are Unicode-aware and JS's are not, or differ at the edges; `str.strip()` and `String.trim()` remove different characters.
+- `^\s+|\s+$` is quadratic in JS on long runs of spaces; trim with an index loop.
+- Python 3.12's `sum()` compensates float rounding and JS's left-to-right addition does not, so ties can break differently: sum in an explicit loop.
+- Test runners that compare with order-blind equality (`dict ==`, `toStrictEqual`) cannot catch an ordering bug: compare JSON text.
+
 Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
 
 Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
