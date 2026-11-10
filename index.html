@@ -143,6 +143,19 @@ data-aria-dark="Switch to auto color mode">
 <li><p><strong>A wide net before releases.</strong> <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">scripts/twin_differential.py</span></code> (after <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">ts</span> <span class="pre">&amp;&amp;</span> <span class="pre">npm</span> <span class="pre">run</span> <span class="pre">build</span></code>) runs about 75,000 generated chord spellings and 3,000 songs through both and reports any difference.</p></li>
 </ul>
 <p>Where the languages differ, the TypeScript side says so in its types: <code class="docutils literal notranslate"><span class="pre">transpositionTable(...).chords</span></code> is a <code class="docutils literal notranslate"><span class="pre">Map</span></code> (a plain object would reorder integer-like keys), and a <code class="docutils literal notranslate"><span class="pre">Key</span></code> is a plain <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">tonic,</span> <span class="pre">minor</span> <span class="pre">}</span></code> object checked by every function that takes one (<code class="docutils literal notranslate"><span class="pre">keyEquals</span></code> compares two).</p>
+<ul class="simple">
+<li><p><strong>CI runs a slice of that net.</strong> <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">scripts/twin_differential.py</span> <span class="pre">--sample-into-fixtures</span> <span class="pre">500</span></code> refreshes 2,500 seeded corpus cases inside <code class="docutils literal notranslate"><span class="pre">fixtures/cases.json</span></code> (tagged <code class="docutils literal notranslate"><span class="pre">&quot;source&quot;:</span> <span class="pre">&quot;corpus&quot;</span></code>), next to the hand-written ones.</p></li>
+</ul>
+<p>Traps the port had to handle, worth knowing before writing any Python/TypeScript twin:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">%</span></code> keeps the sign of the dividend in JS (<code class="docutils literal notranslate"><span class="pre">-1</span> <span class="pre">%</span> <span class="pre">12</span> <span class="pre">===</span> <span class="pre">-1</span></code>), of the divisor in Python: use a <code class="docutils literal notranslate"><span class="pre">mod</span></code> helper.</p></li>
+<li><p>A JS object reorders integer-like keys (<code class="docutils literal notranslate"><span class="pre">&quot;2&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;10&quot;</span></code> come first) and treats <code class="docutils literal notranslate"><span class="pre">&quot;__proto__&quot;</span></code> specially: an ordered mapping is a <code class="docutils literal notranslate"><span class="pre">Map</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">re.match</span></code> anchors at the start only; in JS that is a sticky (<code class="docutils literal notranslate"><span class="pre">y</span></code>) regex whose <code class="docutils literal notranslate"><span class="pre">lastIndex</span></code> must be reset. <code class="docutils literal notranslate"><span class="pre">re.fullmatch</span></code> is <code class="docutils literal notranslate"><span class="pre">^(?:…)$</span></code>.</p></li>
+<li><p>Python’s <code class="docutils literal notranslate"><span class="pre">\d</span></code>, <code class="docutils literal notranslate"><span class="pre">\s</span></code> and <code class="docutils literal notranslate"><span class="pre">\w</span></code> are Unicode-aware and JS’s are not, or differ at the edges; <code class="docutils literal notranslate"><span class="pre">str.strip()</span></code> and <code class="docutils literal notranslate"><span class="pre">String.trim()</span></code> remove different characters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">^\s+|\s+$</span></code> is quadratic in JS on long runs of spaces; trim with an index loop.</p></li>
+<li><p>Python 3.12’s <code class="docutils literal notranslate"><span class="pre">sum()</span></code> compensates float rounding and JS’s left-to-right addition does not, so ties can break differently: sum in an explicit loop.</p></li>
+<li><p>Test runners that compare with order-blind equality (<code class="docutils literal notranslate"><span class="pre">dict</span> <span class="pre">==</span></code>, <code class="docutils literal notranslate"><span class="pre">toStrictEqual</span></code>) cannot catch an ordering bug: compare JSON text.</p></li>
+</ul>
 <p>Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so <code class="docutils literal notranslate"><span class="pre">chordsym&#64;X.Y.Z</span></code> on npm and PyPI are the same behaviour).</p>
 <p>Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.</p>
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>
@@ -151,7 +164,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-10 07:43 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f">4b7d910</a> (main) · chordsym 0.0.1 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-10 07:53 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29">e7c64db</a> (main) · chordsym 0.0.2 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -186,7 +199,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/documentation_options.js?v=e3a6060d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

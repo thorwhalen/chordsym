@@ -1,4 +1,4 @@
-> built 2026-11-10 07:43 UTC from 4b7d910 (main) · chordsym 0.0.1. Details: build_info.json
+> built 2026-11-10 07:53 UTC from e7c64db (main) · chordsym 0.0.2. Details: build_info.json
 
 # index.html.md
 
@@ -39,6 +39,18 @@ The two are kept identical by construction, not by care:
 - **A wide net before releases.** `python scripts/twin_differential.py` (after `cd ts && npm run build`) runs about 75,000 generated chord spellings and 3,000 songs through both and reports any difference.
 
 Where the languages differ, the TypeScript side says so in its types: `transpositionTable(...).chords` is a `Map` (a plain object would reorder integer-like keys), and a `Key` is a plain `{ tonic, minor }` object checked by every function that takes one (`keyEquals` compares two).
+
+- **CI runs a slice of that net.** `python scripts/twin_differential.py --sample-into-fixtures 500` refreshes 2,500 seeded corpus cases inside `fixtures/cases.json` (tagged `"source": "corpus"`), next to the hand-written ones.
+
+Traps the port had to handle, worth knowing before writing any Python/TypeScript twin:
+
+- `%` keeps the sign of the dividend in JS (`-1 % 12 === -1`), of the divisor in Python: use a `mod` helper.
+- A JS object reorders integer-like keys (`"2"`, `"10"` come first) and treats `"__proto__"` specially: an ordered mapping is a `Map`.
+- `re.match` anchors at the start only; in JS that is a sticky (`y`) regex whose `lastIndex` must be reset. `re.fullmatch` is `^(?:…)$`.
+- Python’s `\d`, `\s` and `\w` are Unicode-aware and JS’s are not, or differ at the edges; `str.strip()` and `String.trim()` remove different characters.
+- `^\s+|\s+$` is quadratic in JS on long runs of spaces; trim with an index loop.
+- Python 3.12’s `sum()` compensates float rounding and JS’s left-to-right addition does not, so ties can break differently: sum in an explicit loop.
+- Test runners that compare with order-blind equality (`dict ==`, `toStrictEqual`) cannot catch an ordering bug: compare JSON text.
 
 Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
 
@@ -416,16 +428,18 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-11-10 07:43 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f"><code>4b7d910</code></a> on branch <code>main</code>, for **chordsym 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-10 07:53 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29"><code>e7c64db</code></a> on branch <code>main</code>, for **chordsym 0.0.2** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install chordsym` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/4b7d91046947af87bbf59c5cf49f5618986c9c2f"><code>4b7d91046947af87bbf59c5cf49f5618986c9c2f</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29"><code>e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -436,9 +450,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42777110206">42777110206</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42778339845">42778339845</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>4b7d91046947af87bbf59c5cf49f5618986c9c2f</code> (in the history of the built commit) |
+| Event commit | <code>e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -463,13 +477,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-<code>chordsym</code> is not on PyPI.
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.3/">0.0.3</a>, newer than the documented version (0.0.2).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout 4b7d91046947af87bbf59c5cf49f5618986c9c2f
+git checkout e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
