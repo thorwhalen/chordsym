@@ -1,6 +1,11 @@
 """Tests for chordsym."""
 
+import random
+
+import pytest
+
 from chordsym import (
+    DIALECTS,
     Key,
     chord_function,
     chord_tones,
@@ -12,6 +17,11 @@ from chordsym import (
     transposition_table,
     uses_flats,
 )
+from chordsym import _grammar
+from chordsym._fixtures import load
+from chordsym.keys import _function
+from chordsym.dialects import register_dialect, unregister_dialect
+from chordsym.parse import PARSE_CACHE_SIZE, _parse
 
 
 def test_parse_and_tokens():
@@ -42,3 +52,104 @@ def test_transpose_roundtrip():
         )
     assert transpose_chord("N.C.", 4) == "N.C."
     assert transposition_table(["G", "D"], 0)["chords"] == {"G": "G", "D": "D"}
+
+
+def test_dialects():
+    assert parse_chord("Cs") is None and parse_chord("Cs", dialect="chordonomicon") == (
+        1,
+        "major",
+    )
+    assert chord_tones("Gno3d", dialect="chordonomicon") == (7, 2)
+    assert parse_chord("A:min", dialect="harte") == (9, "minor")
+    assert parse_chord("N", dialect="harte") is None
+    with pytest.raises(ValueError, match="chordonomicon"):
+        parse_chord("C", dialect="nope")
+
+
+def test_dialects_are_extensible():
+    assert parse_chord("am", dialect=str.capitalize) == (9, "minor")  # a function
+    assert register_dialect("lower", str.capitalize) is str.capitalize
+    try:
+        assert parse_chord("am", dialect="lower") == (9, "minor")
+        assert estimate_key(["am", "dm", "e7"], dialect="lower") == Key(9, minor=True)
+        assert "lower" in DIALECTS
+    finally:
+        unregister_dialect("lower")
+    assert "lower" not in DIALECTS
+    with pytest.raises(ValueError):
+        unregister_dialect("lower")
+    with pytest.raises(ValueError):
+        unregister_dialect("harte")
+
+
+def test_built_in_dialects_are_read_only():
+    with pytest.raises(TypeError):
+        DIALECTS["mine"] = str.upper
+    with pytest.raises(ValueError, match="built-in"):
+        register_dialect("harte", str.upper)
+    with pytest.raises(TypeError):
+        register_dialect("mine", "not a function")
+    with pytest.raises(TypeError):
+        parse_chord("C", dialect=None)
+
+    class Unhashable:
+        __hash__ = None
+
+        def __call__(self, symbol):
+            return symbol
+
+    with pytest.raises(TypeError, match="hashable"):
+        parse_chord("C", dialect=Unhashable())
+
+
+def test_parse_chord_is_memoised_on_symbol_and_dialect():
+    assert _parse.cache_info().maxsize == PARSE_CACHE_SIZE
+    _parse.cache_clear()
+    first = parse_chord("Cs", dialect="chordonomicon")
+    assert isinstance(first, tuple)  # immutable, so sharing the cached value is safe
+    assert (
+        parse_chord("Cs", dialect="chordonomicon") is first
+    )  # the same object: cached
+    assert parse_chord("Cs") is None  # the dialect is part of the key
+    calls = []
+
+    def counted(symbol):
+        calls.append(symbol)
+        return symbol
+
+    assert parse_chord("Am", dialect=counted) == parse_chord("Am", dialect=counted)
+    assert calls == ["Am"]  # the second call did not run the dialect
+
+
+def _estimate_key_per_chord(symbols):
+    """estimate_key as it was before counting chords: every occurrence summed in turn."""
+    chords = [p for p in map(parse_chord, symbols) if p]
+    if not chords:
+        return None
+    best, best_score = None, float("-inf")
+    for tonic in range(12):
+        for minor in (False, True):
+            key, score = Key(tonic, minor), 0.0
+            for parsed in chords:
+                score += _grammar.KEY_WEIGHTS[_function(parsed, key)]
+            for parsed in (chords[0], chords[-1]):
+                if _function(parsed, key) == "tonic":
+                    score += _grammar.KEY_WEIGHTS["ends"]
+            if score > best_score:
+                best, best_score = key, score
+    return best
+
+
+def test_counted_key_scores_are_exact():
+    """Scoring distinct chords times their count equals the per-chord sum only because
+    the weights are integers (exact in floating point whatever the order)."""
+    assert all(float(w).is_integer() for w in _grammar.KEY_WEIGHTS.values())
+    tokens = [c["args"][0] for c in load()["cases"] if c["fn"] == "parse_chord"]
+    rng = random.Random(0)
+    songs = [
+        [rng.choice(tokens) for _ in range(rng.randint(0, 80))] for _ in range(2000)
+    ]
+    songs += [c["args"][0] for c in load()["cases"] if c["fn"] == "estimate_key"]
+    for song in songs:
+        if all(isinstance(t, str) for t in song):
+            assert estimate_key(song) == _estimate_key_per_chord(song), song

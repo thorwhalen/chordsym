@@ -11,15 +11,18 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from chordsym import _grammar
+from chordsym.dialects import Dialect, resolve_dialect
 from chordsym.keys import Key, estimate_key
-from chordsym.parse import _ACCIDENTALS, _PITCH_CLASSES, _compile, parse_chord
+from chordsym.parse import parse_chord
 
+_PITCH_CLASSES = _grammar.PITCH_CLASSES
+_ACCIDENTALS = _grammar.ACCIDENTALS
 _SHARP_NAMES = _grammar.SHARP_NAMES
 _FLAT_NAMES = _grammar.FLAT_NAMES
 _FLAT_MAJOR_TONICS = frozenset(_grammar.FLAT_MAJOR_TONICS)
 _FLAT_MINOR_TONICS = frozenset(_grammar.FLAT_MINOR_TONICS)
 #: Groups: lead, root, rest, bass, tail.
-_TRANSPOSABLE_RE = _compile("transposable")
+_TRANSPOSABLE_RE = _grammar.compile_pattern("transposable")
 
 
 def _check_semitones(semitones) -> None:
@@ -58,7 +61,9 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
     """``symbol`` moved by ``semitones``: root and bass move, the rest is kept as written.
 
     ``flats`` spells moved notes with flats (choose it from the target key with
-    :func:`uses_flats`). What is not a chord comes back unchanged.
+    :func:`uses_flats`). What is not a chord comes back unchanged. There is no
+    ``dialect``: the output keeps the input's spelling, so only the default spelling
+    is read (a Chordonomicon ``Cs`` or a Harte ``C:maj7`` comes back unchanged).
 
     >>> transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)
     ('A', 'Gm7', 'Eb/G')
@@ -86,21 +91,28 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
 
 
 def transposition_table(
-    symbols: Iterable[str], semitones: int, *, key: Key | None = None
+    symbols: Iterable[str],
+    semitones: int,
+    *,
+    key: Key | None = None,
+    dialect: str | Dialect = "default",
 ) -> dict:
     """The chords of a song moved by ``semitones``, spelled for the new key.
 
     ``symbols`` are the song's chords in order (they give the key when ``key`` is
     not given). Returns ``{"semitones", "key", "chords"}``: the new key's name
     (``""`` when there are no chords) and ``{original: transposed}`` over the
-    distinct chords, in order of first appearance.
+    distinct chords, in order of first appearance. ``dialect`` (as in
+    :func:`chordsym.parse_chord`) is how ``symbols`` are spelled for the key estimate;
+    each chord is moved by :func:`transpose_chord`, which reads the default spelling only.
 
     >>> transposition_table(["G", "D", "Em", "C", "G"], 3)
     {'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}
     """
     _check_semitones(semitones)
+    normalise = resolve_dialect(dialect)
     symbols = list(symbols)
-    key = key or estimate_key(symbols)
+    key = key or estimate_key(symbols, dialect=normalise)
     target = Key((key.tonic + semitones) % 12, key.minor) if key else None
     flats = uses_flats(target)
     chords = {

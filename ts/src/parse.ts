@@ -3,6 +3,7 @@
  * TypeScript twin of chordsym/parse.py; both read the same grammar and pass fixtures/cases.json.
  * A pitch class is an integer 0-11 (C = 0, C# = 1, ... B = 11).
  */
+import { resolveDialect, type DialectOptions } from "./dialects.js";
 import { ACCIDENTALS, PATTERNS, PITCH_CLASSES, WHITESPACE } from "./grammar.generated.js";
 
 /** "open" is a suspended or power chord: no third. */
@@ -72,15 +73,18 @@ export function pitchClass(letter: string, accidental: string): number {
 }
 
 /** True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`). */
-export function isChordToken(token: string): boolean {
-  return CHORD_RE.test(token);
+export function isChordToken(token: string, options: DialectOptions = {}): boolean {
+  return CHORD_RE.test(resolveDialect(options.dialect)(token));
 }
 
-/** `[root pitch class, quality]`, or null for what is not a chord. A bass note is ignored. */
-export function parseChord(symbol: string): [number, Quality] | null {
-  symbol = strip(symbol);
+/**
+ * `[root pitch class, quality]`, or null for what is not a chord. A bass note is ignored.
+ * `options.dialect` is how `symbol` is spelled: a name in `DIALECTS` or a `Dialect` function.
+ */
+export function parseChord(symbol: string, options: DialectOptions = {}): [number, Quality] | null {
+  symbol = strip(resolveDialect(options.dialect)(symbol));
   const match = ROOT_RE.exec(symbol);
-  if (match === null || !isChordToken(symbol)) return null;
+  if (match === null || !CHORD_RE.test(symbol)) return null;
   const [, letter = "", accidental = "", rest = ""] = match;
   const root = pitchClass(letter, accidental);
   let quality: Quality;
@@ -100,8 +104,12 @@ function note(text: string): number | null {
   return m === null ? null : pitchClass(m[1] ?? "", m[2] ?? "");
 }
 
-/** The chord's pitch classes, bass first (the root, or the bass of a slash chord). */
-export function chordTones(symbol: string): number[] | null {
+/**
+ * The chord's pitch classes, bass first (the root, or the bass of a slash chord).
+ * `options.dialect` names how `symbol` is spelled, as in `parseChord`.
+ */
+export function chordTones(symbol: string, options: DialectOptions = {}): number[] | null {
+  symbol = resolveDialect(options.dialect)(symbol);
   const parsed = parseChord(symbol);
   if (parsed === null) return null;
   const [root, quality] = parsed;

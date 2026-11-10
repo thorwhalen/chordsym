@@ -10,6 +10,10 @@ chordTones("Cmaj7");                       // [0, 4, 7, 11]  (pitch classes, C =
 transposeChord("C/E", 3, { flats: true }); // "Eb/G"
 transpositionTable(["G", "D", "Em", "C"], 3).chords; // Map { G → "Bb", D → "F", Em → "Gm", C → "Eb" }
 estimateKey(["Am", "Dm", "E7"]);           // { tonic: 9, minor: true }
+parseChord("Fsmin", { dialect: "chordonomicon" }); // [6, "minor"]
+parseChord("B:hdim7", { dialect: "harte" });        // [11, "diminished"]
 ```
+
+A dialect is a name in the exported read-only `DIALECTS` map (`"default"`, `"chordonomicon"`, `"harte"`; `registerDialect` adds one) or a pure function `string -> string`; the repository README describes each.
 
 This is the twin of the Python package [`chordsym`](https://pypi.org/project/chordsym/), in the same repository: both read one grammar and pass the same golden cases (`fixtures/cases.json`), so they give the same answer for the same input. See the [repository README](https://github.com/thorwhalen/chordsym#readme).

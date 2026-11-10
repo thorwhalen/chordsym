@@ -3,6 +3,7 @@
  * TypeScript twin of chordsym/keys.py.
  */
 import { KEY_WEIGHTS, MAJOR_KEY, MINOR_KEY } from "./grammar.generated.js";
+import { resolveDialect, type DialectOptions } from "./dialects.js";
 import { mod, parseChord, type Quality } from "./parse.js";
 
 /** A key: its tonic as a pitch class (C = 0, ... B = 11), major or minor. */
@@ -53,20 +54,26 @@ function functionIn(parsed: [number, Quality], key: Key): ChordFunction {
 }
 
 /** "tonic", "diatonic" or "outside" in `key`; null if `symbol` is not a chord. */
-export function chordFunction(symbol: string, key: Key): ChordFunction | null {
+export function chordFunction(
+  symbol: string,
+  key: Key,
+  options: DialectOptions = {},
+): ChordFunction | null {
   checkKey(key);
-  const parsed = parseChord(symbol);
+  const parsed = parseChord(symbol, options);
   return parsed === null ? null : functionIn(parsed, key);
 }
 
 /**
  * The key that best explains a song's chords, in order; null if there are no chords.
- * Ties go to the major key, and to the lower tonic.
+ * Ties go to the major key, and to the lower tonic. `options.dialect` names how `symbols` are
+ * spelled, as in `parseChord`.
  */
-export function estimateKey(symbols: Iterable<string>): Key | null {
+export function estimateKey(symbols: Iterable<string>, options: DialectOptions = {}): Key | null {
+  const dialect = resolveDialect(options.dialect); // an unknown dialect throws, even with no symbols
   const chords: [number, Quality][] = [];
   for (const symbol of symbols) {
-    const parsed = parseChord(symbol);
+    const parsed = parseChord(symbol, { dialect });
     if (parsed !== null) chords.push(parsed);
   }
   if (chords.length === 0) return null;

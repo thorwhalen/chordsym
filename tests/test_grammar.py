@@ -54,6 +54,25 @@ def test_pattern_is_portable(name):
     re.compile(source)
 
 
+_REWRITES = [
+    (name, i, source)
+    for name, rules in _grammar.DIALECT_REWRITES.items()
+    for i, (source, _) in enumerate(rules)
+]
+
+
+@pytest.mark.parametrize("name, i, source", _REWRITES)
+def test_dialect_rewrite_is_portable(name, i, source):
+    """Dialect rewrites run with the ``g`` and ``u`` flags in JS: portable, never empty."""
+    assert _portability_problems(source, "") == []
+    pattern = re.compile(source)
+    assert all(
+        len(m.group()) > 0
+        for text in ("", "C", "Cs", "Gno3d", "Asus4/Cs", "Emajs9")
+        for m in pattern.finditer(text)
+    )
+
+
 @pytest.mark.parametrize(
     "source, flags, bad",
     [
@@ -93,3 +112,28 @@ def test_generated_ts_grammar_is_current():
 @pytest.mark.skipif(not (ROOT / "ts").exists(), reason="no TypeScript twin here")
 def test_npm_package_carries_the_license():
     assert (ROOT / "ts" / "LICENSE").read_text() == (ROOT / "LICENSE").read_text()
+
+
+def _has_integer_like_keys(value) -> bool:
+    return isinstance(value, dict) and any(str(k).isdigit() for k in value)
+
+
+@pytest.mark.skipif(not (ROOT / "ts").exists(), reason="no TypeScript twin here")
+def test_ts_never_iterates_a_table_whose_order_js_changes():
+    """A JS object lists integer-like keys first: iterating such a generated table in TS
+    gives another order than Python's dict. Shared tables whose order matters are pairs."""
+    iterated = {
+        name
+        for path in (ROOT / "ts" / "src").glob("*.ts")
+        if not path.name.endswith(".generated.ts")
+        for name in re.findall(
+            r"Object\.(?:keys|values|entries)\(\s*([A-Z][A-Z_]*)\s*\)",
+            path.read_text(encoding="utf-8"),
+        )
+    }
+    reordered = [
+        name
+        for name in iterated & set(grammar_names())
+        if _has_integer_like_keys(getattr(_grammar, name))
+    ]
+    assert reordered == []

@@ -13,6 +13,15 @@
  */
 export { chordTones, isChordToken, parseChord, type Quality } from "./parse.js";
 export {
+  DIALECTS,
+  harte,
+  registerDialect,
+  resolveDialect,
+  unregisterDialect,
+  type Dialect,
+  type DialectOptions,
+} from "./dialects.js";
+export {
   chordFunction,
   estimateKey,
   keyEquals,

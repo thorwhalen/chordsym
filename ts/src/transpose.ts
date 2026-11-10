@@ -8,6 +8,7 @@ import {
   FLAT_NAMES,
   SHARP_NAMES,
 } from "./grammar.generated.js";
+import { resolveDialect, type DialectOptions } from "./dialects.js";
 import { checkKey, estimateKey, makeKey, type Key } from "./keys.js";
 import { mod, parseChord, pitchClass, whole } from "./parse.js";
 
@@ -41,7 +42,8 @@ function noteClass(name: string): number {
 
 /**
  * `symbol` moved by `semitones`: root and bass move, the rest is kept as written.
- * `flats` spells moved notes with flats. What is not a chord comes back unchanged.
+ * `flats` spells moved notes with flats. What is not a chord comes back unchanged. There is
+ * no `dialect`: the output keeps the input's spelling, so only the default spelling is read.
  */
 export function transposeChord(
   symbol: string,
@@ -71,15 +73,20 @@ export interface TranspositionTable {
   chords: Map<string, string>;
 }
 
-/** The chords of a song moved by `semitones`, spelled for the new key. */
+/**
+ * The chords of a song moved by `semitones`, spelled for the new key. `options.dialect` is
+ * how `symbols` are spelled for the key estimate; each chord is moved by `transposeChord`,
+ * which reads the default spelling only.
+ */
 export function transpositionTable(
   symbols: Iterable<string>,
   semitones: number,
-  options: { key?: Key | null } = {},
+  options: { key?: Key | null } & DialectOptions = {},
 ): TranspositionTable {
   checkSemitones(semitones);
+  const dialect = resolveDialect(options.dialect);
   const list = [...symbols];
-  const key = options.key ? checkKey(options.key) : estimateKey(list);
+  const key = options.key ? checkKey(options.key) : estimateKey(list, { dialect });
   const target = key ? makeKey(mod(key.tonic + semitones, 12), key.minor) : null;
   const flats = usesFlats(target);
   const chords = new Map<string, string>();
