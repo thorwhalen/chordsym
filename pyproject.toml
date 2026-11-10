@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "chordsym"
-version = "0.0.2"
+version = "0.0.3"
 description = "Chord symbols without dependencies: parse, pitch classes, key estimation, transposition"
 readme = "README.md"
 requires-python = ">=3.10"
