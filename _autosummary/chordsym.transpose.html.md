@@ -14,7 +14,7 @@ Move chord symbols by semitones, spelled for the target key.
 | [`key_name`](#chordsym.transpose.key_name)(key, \*[, flats])                         | `"G"`, `"Bb"`, `"F#m"`: the key spelled as its tonic chord.                     |
 |-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | [`transpose_chord`](#chordsym.transpose.transpose_chord)(symbol, semitones, \*[, flats])    | `symbol` moved by `semitones`: root and bass move, the rest is kept as written. |
-| [`transposition_table`](#chordsym.transpose.transposition_table)(symbols, semitones, \*[, key]) | The chords of a song moved by `semitones`, spelled for the new key.             |
+| [`transposition_table`](#chordsym.transpose.transposition_table)(symbols, semitones, \*[, ...]) | The chords of a song moved by `semitones`, spelled for the new key.             |
 | [`uses_flats`](#chordsym.transpose.uses_flats)(key)                                    | Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.     |
 
 ### chordsym.transpose.key_name(key, , flats=None)
@@ -34,7 +34,9 @@ Move chord symbols by semitones, spelled for the target key.
 `symbol` moved by `semitones`: root and bass move, the rest is kept as written.
 
 `flats` spells moved notes with flats (choose it from the target key with
-[`uses_flats()`](#chordsym.transpose.uses_flats)). What is not a chord comes back unchanged.
+[`uses_flats()`](#chordsym.transpose.uses_flats)). What is not a chord comes back unchanged. There is no
+`dialect`: the output keeps the input’s spelling, so only the default spelling
+is read (a Chordonomicon `Cs` or a Harte `C:maj7` comes back unchanged).
 
 ```pycon
 >>> transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)
@@ -48,14 +50,16 @@ Move chord symbols by semitones, spelled for the target key.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### chordsym.transpose.transposition_table(symbols, semitones, , key=None)
+### chordsym.transpose.transposition_table(symbols, semitones, , key=None, dialect='default')
 
 The chords of a song moved by `semitones`, spelled for the new key.
 
 `symbols` are the song’s chords in order (they give the key when `key` is
 not given). Returns `{"semitones", "key", "chords"}`: the new key’s name
 (`""` when there are no chords) and `{original: transposed}` over the
-distinct chords, in order of first appearance.
+distinct chords, in order of first appearance. `dialect` (as in
+[`chordsym.parse_chord()`](chordsym.html.md#chordsym.parse_chord)) is how `symbols` are spelled for the key estimate;
+each chord is moved by [`transpose_chord()`](#chordsym.transpose.transpose_chord), which reads the default spelling only.
 
 ```pycon
 >>> transposition_table(["G", "D", "Em", "C", "G"], 3)

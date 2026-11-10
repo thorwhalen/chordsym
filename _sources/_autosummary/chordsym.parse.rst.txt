@@ -4,6 +4,12 @@ chordsym.parse
 .. automodule:: chordsym.parse
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      PARSE_CACHE_SIZE
+   
    .. rubric:: Functions
 
    .. autosummary::

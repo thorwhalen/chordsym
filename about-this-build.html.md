@@ -2,18 +2,18 @@
 
 # About this build
 
-This documentation was built on **2026-11-10 07:53 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29"><code>e7c64db</code></a> on branch <code>main</code>, for **chordsym 0.0.2** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-10 10:22 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5"><code>09f3563</code></a> on branch <code>main</code>, for **chordsym 0.0.3** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install chordsym` gives newer code than these docs describe.
+- The documented version (0.0.3) is behind the latest release on PyPI (0.0.4): `pip install chordsym` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29"><code>e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5"><code>09f356311b6de019cc76c48cbaf3fc4dbfb935d5</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -24,9 +24,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42778339845">42778339845</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42798386120">42798386120</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29</code> (in the history of the built commit) |
+| Event commit | <code>09f356311b6de019cc76c48cbaf3fc4dbfb935d5</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -51,13 +51,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/chordsym/0.0.3/">0.0.3</a>, newer than the documented version (0.0.2).
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.4/">0.0.4</a>, newer than the documented version (0.0.3).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29
+git checkout 09f356311b6de019cc76c48cbaf3fc4dbfb935d5
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

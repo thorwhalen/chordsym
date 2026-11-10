@@ -6,6 +6,7 @@
 ## Pages in this subsection
 
 - [chordsym](chordsym.html.md): chordsym: chord symbols without dependencies — parse, pitch classes, keys, transposition.
+- [chordsym.dialects](chordsym.dialects.html.md): Dialects: how a chord symbol is spelled, as a function into the default spelling.
 - [chordsym.keys](chordsym.keys.html.md): What a chord does in a key: estimate a song’s key from its chords, label chords by function.
 - [chordsym.parse](chordsym.parse.html.md): Read a chord symbol: is it one, what is its root and quality, which pitch classes it sounds.
 - [chordsym.transpose](chordsym.transpose.html.md): Move chord symbols by semitones, spelled for the target key.

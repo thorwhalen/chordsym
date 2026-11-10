@@ -30,6 +30,7 @@
    :toctree:
    :recursive:
 
+   dialects
    keys
    parse
    transpose

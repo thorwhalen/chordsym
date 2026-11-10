@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-10T07:53:58Z",
+  "built_at": "2026-11-10T10:22:32Z",
   "package": {
     "name": "chordsym",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "display_name": "chordsym",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29",
-    "short_commit": "e7c64db",
+    "commit": "09f356311b6de019cc76c48cbaf3fc4dbfb935d5",
+    "short_commit": "09f3563",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/chordsym",
-    "commit_url": "https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29",
+    "commit_url": "https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/chordsym",
-    "sha": "e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29",
+    "sha": "09f356311b6de019cc76c48cbaf3fc4dbfb935d5",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "42778339845",
-    "run_url": "https://github.com/thorwhalen/chordsym/actions/runs/42778339845",
+    "run_id": "42798386120",
+    "run_url": "https://github.com/thorwhalen/chordsym/actions/runs/42798386120",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -55,21 +55,21 @@
     "docs_dir": "docsrc"
   },
   "site": {
-    "modules_documented": 4,
-    "objects_documented": 20
+    "modules_documented": 5,
+    "objects_documented": 27
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.3",
+    "latest": "0.0.4",
     "relation": "behind",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/chordsym && cd chordsym\ngit checkout e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/chordsym && cd chordsym\ngit checkout 09f356311b6de019cc76c48cbaf3fc4dbfb935d5\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": false,
     "notes": [
-      "The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install chordsym` gives newer code than these docs describe."
+      "The documented version (0.0.3) is behind the latest release on PyPI (0.0.4): `pip install chordsym` gives newer code than these docs describe."
     ]
   }
 }

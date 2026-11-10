@@ -14,7 +14,18 @@ Chord symbols without dependencies (standard library only): is this token a chor
 {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}
 ```
 
-It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`, `C∆`, `CmΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+
+Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function`, `estimate_key`, and `transposition_table` for its key estimate), which rewrites a symbol into the default spelling first. A dialect is a name in `chordsym.DIALECTS` or any pure function `str -> str` (results are cached per function); `chordsym.dialects.register_dialect(name, func)` adds a name. `transpose_chord` takes no dialect, since its output keeps the input’s spelling: it moves default spellings only.
+
+- `"default"`: the chart spellings above.
+- `"chordonomicon"`: the Chordonomicon corpus, sharps written `s` (`Cs`, `Fsmin`, `A/Cs`) and power chords `no3d` (`Gno3d` is `G5`).
+- `"harte"`: Harte’s `root:shorthand` (`C:maj7`, `A:min`, `B:hdim7`), added degrees in parentheses (`C:maj(9)` is `Cadd9`), a degree bass (`C:maj/3` has E in the bass), and the common interval lists `(1,3,5)`, `(1,b3,5)`, `(1,3,5,b7)`, `(1,b3,5,b7)`, `(1,5)`. Any other interval list, an omitted degree (`*3`), `N` (no chord) and `X` are not read as chords.
+
+```python
+>>> parse_chord("Fsmin", dialect="chordonomicon"), chord_tones("B:hdim7", dialect="harte")
+((6, 'minor'), (11, 2, 5, 9))
+```
 
 ## In the browser: the TypeScript twin
 
@@ -42,6 +53,7 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 
 - `%` keeps the sign of the dividend in JS (`-1 % 12 === -1`), of the divisor in Python: use a `mod` helper.
 - A JS object reorders integer-like keys (`"2"`, `"10"` come first) and treats `"__proto__"` specially: an ordered mapping is a `Map`.
+- The same holds for a shared table: a Python dict generated as a JS object loses its order if a key is integer-like, so a table whose order matters is a list of pairs (`HARTE_ADDED`), and a test fails if TypeScript iterates a table with integer-like keys. Look keys up with an own-property check (`Object.hasOwn`), or `"constructor"` is found.
 - `re.match` anchors at the start only; in JS that is a sticky (`y`) regex whose `lastIndex` must be reset. `re.fullmatch` is `^(?:…)$`.
 - Python’s `\d`, `\s` and `\w` are Unicode-aware and JS’s are not, or differ at the edges; `str.strip()` and `String.trim()` remove different characters.
 - `^\s+|\s+$` is quadratic in JS on long runs of spaces; trim with an index loop.
@@ -50,6 +62,6 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 
 Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
 
-Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
+Seeded from songleaf (thorwhalen/songleaf#31). Planned: a Nashville/Roman dialect; pychord and music21 as test oracles only.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>

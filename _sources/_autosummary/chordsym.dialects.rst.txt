@@ -1,0 +1,22 @@
+chordsym.dialects
+=================
+
+.. automodule:: chordsym.dialects
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      Dialect
+      DIALECTS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      harte
+      register_dialect
+      resolve_dialect
+      unregister_dialect
+   

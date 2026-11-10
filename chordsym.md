@@ -1,4 +1,4 @@
-> built 2026-11-10 07:53 UTC from e7c64db (main) · chordsym 0.0.2. Details: build_info.json
+> built 2026-11-10 10:22 UTC from 09f3563 (main) · chordsym 0.0.3. Details: build_info.json
 
 # index.html.md
 
@@ -18,7 +18,18 @@ Chord symbols without dependencies (standard library only): is this token a chor
 {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}
 ```
 
-It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`, `C∆`, `CmΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+
+Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function`, `estimate_key`, and `transposition_table` for its key estimate), which rewrites a symbol into the default spelling first. A dialect is a name in `chordsym.DIALECTS` or any pure function `str -> str` (results are cached per function); `chordsym.dialects.register_dialect(name, func)` adds a name. `transpose_chord` takes no dialect, since its output keeps the input’s spelling: it moves default spellings only.
+
+- `"default"`: the chart spellings above.
+- `"chordonomicon"`: the Chordonomicon corpus, sharps written `s` (`Cs`, `Fsmin`, `A/Cs`) and power chords `no3d` (`Gno3d` is `G5`).
+- `"harte"`: Harte’s `root:shorthand` (`C:maj7`, `A:min`, `B:hdim7`), added degrees in parentheses (`C:maj(9)` is `Cadd9`), a degree bass (`C:maj/3` has E in the bass), and the common interval lists `(1,3,5)`, `(1,b3,5)`, `(1,3,5,b7)`, `(1,b3,5,b7)`, `(1,5)`. Any other interval list, an omitted degree (`*3`), `N` (no chord) and `X` are not read as chords.
+
+```python
+>>> parse_chord("Fsmin", dialect="chordonomicon"), chord_tones("B:hdim7", dialect="harte")
+((6, 'minor'), (11, 2, 5, 9))
+```
 
 ## In the browser: the TypeScript twin
 
@@ -46,6 +57,7 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 
 - `%` keeps the sign of the dividend in JS (`-1 % 12 === -1`), of the divisor in Python: use a `mod` helper.
 - A JS object reorders integer-like keys (`"2"`, `"10"` come first) and treats `"__proto__"` specially: an ordered mapping is a `Map`.
+- The same holds for a shared table: a Python dict generated as a JS object loses its order if a key is integer-like, so a table whose order matters is a list of pairs (`HARTE_ADDED`), and a test fails if TypeScript iterates a table with integer-like keys. Look keys up with an own-property check (`Object.hasOwn`), or `"constructor"` is found.
 - `re.match` anchors at the start only; in JS that is a sticky (`y`) regex whose `lastIndex` must be reset. `re.fullmatch` is `^(?:…)$`.
 - Python’s `\d`, `\s` and `\w` are Unicode-aware and JS’s are not, or differ at the edges; `str.strip()` and `String.trim()` remove different characters.
 - `^\s+|\s+$` is quadratic in JS on long runs of spaces; trim with an index loop.
@@ -54,9 +66,104 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 
 Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
 
-Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
+Seeded from songleaf (thorwhalen/songleaf#31). Planned: a Nashville/Roman dialect; pychord and music21 as test oracles only.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>
+
+
+# _autosummary/chordsym.dialects.html.md
+
+# chordsym.dialects
+
+Dialects: how a chord symbol is spelled, as a function into the default spelling.
+
+A dialect is a pure function `str -> str` that rewrites a symbol from its own spelling
+into the one [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) reads by default. Every function that reads
+chord symbols takes `dialect=`: a registered name or the function itself.
+
+```pycon
+>>> resolve_dialect("chordonomicon")("Fsmin7/Cs"), resolve_dialect("harte")("Bb:min7/b7")
+('F#min7/C#', 'Bbm7/Ab')
+>>> list(DIALECTS)
+['default', 'chordonomicon', 'harte']
+```
+
+Built-in names are read-only; [`register_dialect()`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.register_dialect) adds others. `parse_chord`
+remembers results keyed on the dialect’s function, so a dialect must be pure (same input,
+same output).
+
+### Module Attributes
+
+| [`Dialect`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.Dialect)   | rewrites a chord symbol from its own spelling into the default one.                                                               |
+|------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| [`DIALECTS`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.DIALECTS)  | Dialect name -> its function (read-only; add a dialect with [`register_dialect()`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.register_dialect)). |
+
+### Functions
+
+| [`harte`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.harte)(symbol)                     | A Harte label (`C:maj7`, `A:min(9)`, `C:(1,b3,5)`, `C:maj/3`) in the default spelling; `""` (not a chord) for a Harte label it cannot read, the symbol unchanged when it is not a Harte label (`N`, `D/F#`).   |
+|------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`register_dialect`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.register_dialect)(name, normalise) | Make `normalise` (a pure `str -> str`) readable as `dialect=name`; returns it.                                                                                                                                 |
+| [`resolve_dialect`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.resolve_dialect)(dialect)          | The function for `dialect`: a registered name, or a function passed as is.                                                                                                                                     |
+| [`unregister_dialect`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.unregister_dialect)(name)          | Forget a dialect added with [`register_dialect()`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.register_dialect) (built-ins stay).                                                                                              |
+
+### chordsym.dialects.DIALECTS *= mappingproxy({'default': <function \_rewriter.<locals>.rewrite>, 'chordonomicon': <function \_rewriter.<locals>.rewrite>, 'harte': <function harte>})*
+
+Dialect name -> its function (read-only; add a dialect with [`register_dialect()`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.register_dialect)).
+
+### chordsym.dialects.Dialect
+
+rewrites a chord symbol from its own spelling into the default one.
+
+* **Type:**
+  A dialect
+
+alias of [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### chordsym.dialects.harte(symbol)
+
+A Harte label (`C:maj7`, `A:min(9)`, `C:(1,b3,5)`, `C:maj/3`) in the default
+spelling; `""` (not a chord) for a Harte label it cannot read, the symbol unchanged
+when it is not a Harte label (`N`, `D/F#`).
+
+```pycon
+>>> [harte(s) for s in ("C:maj/b7", "A:min(9)", "C:sus4(b7)", "C:(1,b3,5,b7)", "C:(3,5)", "N")]
+['C/Bb', 'Amadd9', 'C7sus4', 'Cm7', '', 'N']
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### chordsym.dialects.register_dialect(name, normalise)
+
+Make `normalise` (a pure `str -> str`) readable as `dialect=name`; returns it.
+
+```pycon
+>>> _ = register_dialect("lower", str.capitalize)
+>>> from chordsym import parse_chord
+>>> parse_chord("am", dialect="lower")
+(9, 'minor')
+>>> unregister_dialect("lower")
+```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### chordsym.dialects.resolve_dialect(dialect)
+
+The function for `dialect`: a registered name, or a function passed as is.
+
+Raises ValueError for an unknown name (listing the known ones), TypeError for
+anything else, including an unhashable function (results are cached per function).
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### chordsym.dialects.unregister_dialect(name)
+
+Forget a dialect added with [`register_dialect()`](_autosummary/chordsym.dialects.html.md#chordsym.dialects.register_dialect) (built-ins stay).
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 
 # _autosummary/chordsym.html.md
@@ -69,19 +176,21 @@ chordsym: chord symbols without dependencies — parse, pitch classes, keys, tra
 >>> from chordsym import parse_chord, transpose_chord, estimate_key
 >>> parse_chord("Am7"), transpose_chord("Am7", 2), estimate_key(["Am", "Dm", "E7"])
 ((9, 'minor'), 'Bm7', Key(tonic=9, minor=True))
+>>> parse_chord("Fsmin", dialect="chordonomicon"), parse_chord("C:maj7", dialect="harte")
+((6, 'minor'), (0, 'major'))
 ```
 
 ### Functions
 
-| [`chord_function`](_autosummary/chordsym.html.md#chordsym.chord_function)(symbol, key)                        | `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.   |
+| [`chord_function`](_autosummary/chordsym.html.md#chordsym.chord_function)(symbol, key, \*[, dialect])         | `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.   |
 |-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`chord_tones`](_autosummary/chordsym.html.md#chordsym.chord_tones)(symbol)                                | The chord's pitch classes, bass first (the root, or the bass of a slash chord).     |
-| [`estimate_key`](_autosummary/chordsym.html.md#chordsym.estimate_key)(symbols)                              | The key that best explains a song's chords, in order; None if there are no chords.  |
-| [`is_chord_token`](_autosummary/chordsym.html.md#chordsym.is_chord_token)(token)                              | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).           |
+| [`chord_tones`](_autosummary/chordsym.html.md#chordsym.chord_tones)(symbol, \*[, dialect])                 | The chord's pitch classes, bass first (the root, or the bass of a slash chord).     |
+| [`estimate_key`](_autosummary/chordsym.html.md#chordsym.estimate_key)(symbols, \*[, dialect])               | The key that best explains a song's chords, in order; None if there are no chords.  |
+| [`is_chord_token`](_autosummary/chordsym.html.md#chordsym.is_chord_token)(token, \*[, dialect])               | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).           |
 | [`key_name`](_autosummary/chordsym.html.md#chordsym.key_name)(key, \*[, flats])                         | `"G"`, `"Bb"`, `"F#m"`: the key spelled as its tonic chord.                         |
-| [`parse_chord`](_autosummary/chordsym.html.md#chordsym.parse_chord)(symbol)                                | `(root pitch class, quality)`, or None for what is not a chord.                     |
+| [`parse_chord`](_autosummary/chordsym.html.md#chordsym.parse_chord)(symbol, \*[, dialect])                 | `(root pitch class, quality)`, or None for what is not a chord.                     |
 | [`transpose_chord`](_autosummary/chordsym.html.md#chordsym.transpose_chord)(symbol, semitones, \*[, flats])    | `symbol` moved by `semitones`: root and bass move, the rest is kept as written.     |
-| [`transposition_table`](_autosummary/chordsym.html.md#chordsym.transposition_table)(symbols, semitones, \*[, key]) | The chords of a song moved by `semitones`, spelled for the new key.                 |
+| [`transposition_table`](_autosummary/chordsym.html.md#chordsym.transposition_table)(symbols, semitones, \*[, ...]) | The chords of a song moved by `semitones`, spelled for the new key.                 |
 | [`uses_flats`](_autosummary/chordsym.html.md#chordsym.uses_flats)(key)                                    | Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.         |
 
 ### Classes
@@ -95,42 +204,63 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A key: its tonic as a pitch class (C = 0, C# = 1, … B = 11), major or minor.
 
-### chordsym.chord_function(symbol, key)
+### chordsym.chord_function(symbol, key, , dialect='default')
 
 `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.
+
+`dialect` names how `symbol` is spelled, as in [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### chordsym.chord_tones(symbol)
+### chordsym.chord_tones(symbol, , dialect='default')
 
 The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
-sevenths (`7`, `maj7`, `dim7`, `m7b5`), sixths and added ninths. `None`
-for what [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) does not read as a chord.
+sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
+`None` for what [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) does not read as a chord (in
+`dialect`).
+
+```pycon
+>>> chord_tones("Co7"), chord_tones("CΔ"), chord_tones("C-Δ7")
+((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))
+>>> chord_tones("A:min7", dialect="harte"), chord_tones("C:maj/3", dialect="harte")
+((9, 0, 4, 7), (4, 0, 7))
+```
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### chordsym.estimate_key(symbols)
+### chordsym.estimate_key(symbols, , dialect='default')
 
 The key that best explains a song’s chords, in order; None if there are no chords.
 
 Each chord scores for a key when it belongs to it, and more when it is its
 tonic; a song that starts or ends on a key’s tonic chord scores extra for
-that key. Ties go to the major key, and to the lower tonic.
+that key. Ties go to the major key, and to the lower tonic. `dialect` names
+how `symbols` are spelled, as in [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord).
+
+```pycon
+>>> estimate_key(["Cs", "Fs", "Gs", "Cs"], dialect="chordonomicon")
+Key(tonic=1, minor=False)
+```
 
 * **Return type:**
   [`Key`](_autosummary/chordsym.keys.html.md#chordsym.keys.Key) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### chordsym.is_chord_token(token)
+### chordsym.is_chord_token(token, , dialect='default')
 
 True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).
+
+`dialect` is how `token` is spelled: a name in `chordsym.DIALECTS` or a
+function into the default spelling (see [`chordsym.dialects`](_autosummary/chordsym.dialects.html.md#module-chordsym.dialects)).
 
 ```pycon
 >>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
 (True, True, False)
+>>> is_chord_token("Gno3d"), is_chord_token("Gno3d", dialect="chordonomicon")
+(False, True)
 ```
 
 * **Return type:**
@@ -148,19 +278,30 @@ True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### chordsym.parse_chord(symbol)
+### chordsym.parse_chord(symbol, , dialect='default')
 
 `(root pitch class, quality)`, or None for what is not a chord.
 
 The quality is `"major"`, `"minor"`, `"diminished"`, or `"open"` (a
 suspended or power chord, which has no third). A bass note is ignored. What
 the chart parser would not read as a chord ([`is_chord_token()`](_autosummary/chordsym.html.md#chordsym.is_chord_token)) is not one.
+`dialect` is how `symbol` is spelled: a name in `chordsym.DIALECTS` (the
+default reads chart spellings, `"chordonomicon"` and `"harte"` those corpora’s)
+or a function into the default spelling (see [`chordsym.dialects`](_autosummary/chordsym.dialects.html.md#module-chordsym.dialects)).
+
+Results are remembered (up to `PARSE_CACHE_SIZE`), keyed on the symbol and
+the dialect’s function, so a dialect must be pure; results are immutable tuples, so
+sharing them is safe.
 
 ```pycon
 >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
 ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
->>> parse_chord("C-7"), parse_chord("Bridge")
-((0, 'minor'), None)
+>>> parse_chord("C-7"), parse_chord("Bridge"), parse_chord("Co7"), parse_chord("CΔ7")
+((0, 'minor'), None, (0, 'diminished'), (0, 'major'))
+>>> parse_chord("CmΔ7"), parse_chord("C∆")
+((0, 'minor'), (0, 'major'))
+>>> parse_chord("A/Cs", dialect="chordonomicon"), parse_chord("N", dialect="harte")
+((9, 'major'), None)
 ```
 
 * **Return type:**
@@ -171,7 +312,9 @@ the chart parser would not read as a chord ([`is_chord_token()`](_autosummary/ch
 `symbol` moved by `semitones`: root and bass move, the rest is kept as written.
 
 `flats` spells moved notes with flats (choose it from the target key with
-[`uses_flats()`](_autosummary/chordsym.html.md#chordsym.uses_flats)). What is not a chord comes back unchanged.
+[`uses_flats()`](_autosummary/chordsym.html.md#chordsym.uses_flats)). What is not a chord comes back unchanged. There is no
+`dialect`: the output keeps the input’s spelling, so only the default spelling
+is read (a Chordonomicon `Cs` or a Harte `C:maj7` comes back unchanged).
 
 ```pycon
 >>> transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)
@@ -185,14 +328,16 @@ the chart parser would not read as a chord ([`is_chord_token()`](_autosummary/ch
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### chordsym.transposition_table(symbols, semitones, , key=None)
+### chordsym.transposition_table(symbols, semitones, , key=None, dialect='default')
 
 The chords of a song moved by `semitones`, spelled for the new key.
 
 `symbols` are the song’s chords in order (they give the key when `key` is
 not given). Returns `{"semitones", "key", "chords"}`: the new key’s name
 (`""` when there are no chords) and `{original: transposed}` over the
-distinct chords, in order of first appearance.
+distinct chords, in order of first appearance. `dialect` (as in
+[`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord)) is how `symbols` are spelled for the key estimate;
+each chord is moved by [`transpose_chord()`](_autosummary/chordsym.html.md#chordsym.transpose_chord), which reads the default spelling only.
 
 ```pycon
 >>> transposition_table(["G", "D", "Em", "C", "G"], 3)
@@ -216,10 +361,11 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 ### Modules
 
-| [`keys`](_autosummary/chordsym.keys.html.md#module-chordsym.keys)           | What a chord does in a key: estimate a song's key from its chords, label chords by function.   |
-|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| [`parse`](_autosummary/chordsym.parse.html.md#module-chordsym.parse)         | Read a chord symbol: is it one, what is its root and quality, which pitch classes it sounds.   |
-| [`transpose`](_autosummary/chordsym.transpose.html.md#module-chordsym.transpose) | Move chord symbols by semitones, spelled for the target key.                                   |
+| [`dialects`](_autosummary/chordsym.dialects.html.md#module-chordsym.dialects)   | Dialects: how a chord symbol is spelled, as a function into the default spelling.            |
+|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| [`keys`](_autosummary/chordsym.keys.html.md#module-chordsym.keys)           | What a chord does in a key: estimate a song's key from its chords, label chords by function. |
+| [`parse`](_autosummary/chordsym.parse.html.md#module-chordsym.parse)         | Read a chord symbol: is it one, what is its root and quality, which pitch classes it sounds. |
+| [`transpose`](_autosummary/chordsym.transpose.html.md#module-chordsym.transpose) | Move chord symbols by semitones, spelled for the target key.                                 |
 
 
 # _autosummary/chordsym.keys.html.md
@@ -240,9 +386,9 @@ Key(tonic=9, minor=True)
 
 ### Functions
 
-| [`chord_function`](_autosummary/chordsym.keys.html.md#chordsym.keys.chord_function)(symbol, key)   | `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.   |
-|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`estimate_key`](_autosummary/chordsym.keys.html.md#chordsym.keys.estimate_key)(symbols)         | The key that best explains a song's chords, in order; None if there are no chords.  |
+| [`chord_function`](_autosummary/chordsym.keys.html.md#chordsym.keys.chord_function)(symbol, key, \*[, dialect])   | `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.   |
+|-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`estimate_key`](_autosummary/chordsym.keys.html.md#chordsym.keys.estimate_key)(symbols, \*[, dialect])         | The key that best explains a song's chords, in order; None if there are no chords.  |
 
 ### Classes
 
@@ -255,20 +401,28 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A key: its tonic as a pitch class (C = 0, C# = 1, … B = 11), major or minor.
 
-### chordsym.keys.chord_function(symbol, key)
+### chordsym.keys.chord_function(symbol, key, , dialect='default')
 
 `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.
+
+`dialect` names how `symbol` is spelled, as in [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### chordsym.keys.estimate_key(symbols)
+### chordsym.keys.estimate_key(symbols, , dialect='default')
 
 The key that best explains a song’s chords, in order; None if there are no chords.
 
 Each chord scores for a key when it belongs to it, and more when it is its
 tonic; a song that starts or ends on a key’s tonic chord scores extra for
-that key. Ties go to the major key, and to the lower tonic.
+that key. Ties go to the major key, and to the lower tonic. `dialect` names
+how `symbols` are spelled, as in [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord).
+
+```pycon
+>>> estimate_key(["Cs", "Fs", "Gs", "Cs"], dialect="chordonomicon")
+Key(tonic=1, minor=False)
+```
 
 * **Return type:**
   [`Key`](_autosummary/chordsym.keys.html.md#chordsym.keys.Key) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -291,49 +445,89 @@ Pure standard library. A pitch class is an int 0-11 (C = 0, C# = 1, … B = 11).
 ((0, 4, 7, 11), (7, 9, 0, 4), (6, 9, 0, 4))
 ```
 
+Other spellings are read through a `dialect` (see [`chordsym.dialects`](_autosummary/chordsym.dialects.html.md#module-chordsym.dialects)):
+
+```pycon
+>>> parse_chord("Csmin", dialect="chordonomicon"), parse_chord("B:hdim7", dialect="harte")
+((1, 'minor'), (11, 'diminished'))
+```
+
+### Module Attributes
+
+| [`PARSE_CACHE_SIZE`](_autosummary/chordsym.parse.html.md#chordsym.parse.PARSE_CACHE_SIZE)   | How many distinct `(symbol, dialect)` results [`parse_chord()`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord) remembers.   |
+|---------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+
 ### Functions
 
-| [`chord_tones`](_autosummary/chordsym.parse.html.md#chordsym.parse.chord_tones)(symbol)   | The chord's pitch classes, bass first (the root, or the bass of a slash chord).   |
-|------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`is_chord_token`](_autosummary/chordsym.parse.html.md#chordsym.parse.is_chord_token)(token) | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).         |
-| [`parse_chord`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord)(symbol)   | `(root pitch class, quality)`, or None for what is not a chord.                   |
+| [`chord_tones`](_autosummary/chordsym.parse.html.md#chordsym.parse.chord_tones)(symbol, \*[, dialect])   | The chord's pitch classes, bass first (the root, or the bass of a slash chord).   |
+|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`is_chord_token`](_autosummary/chordsym.parse.html.md#chordsym.parse.is_chord_token)(token, \*[, dialect]) | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).         |
+| [`parse_chord`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord)(symbol, \*[, dialect])   | `(root pitch class, quality)`, or None for what is not a chord.                   |
 
-### chordsym.parse.chord_tones(symbol)
+### chordsym.parse.PARSE_CACHE_SIZE *= 8192*
+
+How many distinct `(symbol, dialect)` results [`parse_chord()`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord) remembers.
+
+### chordsym.parse.chord_tones(symbol, , dialect='default')
 
 The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
-sevenths (`7`, `maj7`, `dim7`, `m7b5`), sixths and added ninths. `None`
-for what [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) does not read as a chord.
+sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
+`None` for what [`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord) does not read as a chord (in
+`dialect`).
+
+```pycon
+>>> chord_tones("Co7"), chord_tones("CΔ"), chord_tones("C-Δ7")
+((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))
+>>> chord_tones("A:min7", dialect="harte"), chord_tones("C:maj/3", dialect="harte")
+((9, 0, 4, 7), (4, 0, 7))
+```
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### chordsym.parse.is_chord_token(token)
+### chordsym.parse.is_chord_token(token, , dialect='default')
 
 True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).
+
+`dialect` is how `token` is spelled: a name in `chordsym.DIALECTS` or a
+function into the default spelling (see [`chordsym.dialects`](_autosummary/chordsym.dialects.html.md#module-chordsym.dialects)).
 
 ```pycon
 >>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
 (True, True, False)
+>>> is_chord_token("Gno3d"), is_chord_token("Gno3d", dialect="chordonomicon")
+(False, True)
 ```
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### chordsym.parse.parse_chord(symbol)
+### chordsym.parse.parse_chord(symbol, , dialect='default')
 
 `(root pitch class, quality)`, or None for what is not a chord.
 
 The quality is `"major"`, `"minor"`, `"diminished"`, or `"open"` (a
 suspended or power chord, which has no third). A bass note is ignored. What
 the chart parser would not read as a chord ([`is_chord_token()`](_autosummary/chordsym.parse.html.md#chordsym.parse.is_chord_token)) is not one.
+`dialect` is how `symbol` is spelled: a name in `chordsym.DIALECTS` (the
+default reads chart spellings, `"chordonomicon"` and `"harte"` those corpora’s)
+or a function into the default spelling (see [`chordsym.dialects`](_autosummary/chordsym.dialects.html.md#module-chordsym.dialects)).
+
+Results are remembered (up to [`PARSE_CACHE_SIZE`](_autosummary/chordsym.parse.html.md#chordsym.parse.PARSE_CACHE_SIZE)), keyed on the symbol and
+the dialect’s function, so a dialect must be pure; results are immutable tuples, so
+sharing them is safe.
 
 ```pycon
 >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
 ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
->>> parse_chord("C-7"), parse_chord("Bridge")
-((0, 'minor'), None)
+>>> parse_chord("C-7"), parse_chord("Bridge"), parse_chord("Co7"), parse_chord("CΔ7")
+((0, 'minor'), None, (0, 'diminished'), (0, 'major'))
+>>> parse_chord("CmΔ7"), parse_chord("C∆")
+((0, 'minor'), (0, 'major'))
+>>> parse_chord("A/Cs", dialect="chordonomicon"), parse_chord("N", dialect="harte")
+((9, 'major'), None)
 ```
 
 * **Return type:**
@@ -358,7 +552,7 @@ Move chord symbols by semitones, spelled for the target key.
 | [`key_name`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.key_name)(key, \*[, flats])                         | `"G"`, `"Bb"`, `"F#m"`: the key spelled as its tonic chord.                     |
 |-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | [`transpose_chord`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.transpose_chord)(symbol, semitones, \*[, flats])    | `symbol` moved by `semitones`: root and bass move, the rest is kept as written. |
-| [`transposition_table`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.transposition_table)(symbols, semitones, \*[, key]) | The chords of a song moved by `semitones`, spelled for the new key.             |
+| [`transposition_table`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.transposition_table)(symbols, semitones, \*[, ...]) | The chords of a song moved by `semitones`, spelled for the new key.             |
 | [`uses_flats`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.uses_flats)(key)                                    | Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.     |
 
 ### chordsym.transpose.key_name(key, , flats=None)
@@ -378,7 +572,9 @@ Move chord symbols by semitones, spelled for the target key.
 `symbol` moved by `semitones`: root and bass move, the rest is kept as written.
 
 `flats` spells moved notes with flats (choose it from the target key with
-[`uses_flats()`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.uses_flats)). What is not a chord comes back unchanged.
+[`uses_flats()`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.uses_flats)). What is not a chord comes back unchanged. There is no
+`dialect`: the output keeps the input’s spelling, so only the default spelling
+is read (a Chordonomicon `Cs` or a Harte `C:maj7` comes back unchanged).
 
 ```pycon
 >>> transpose_chord("G", 2), transpose_chord("F#m7", 1), transpose_chord("C/E", 3, flats=True)
@@ -392,14 +588,16 @@ Move chord symbols by semitones, spelled for the target key.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### chordsym.transpose.transposition_table(symbols, semitones, , key=None)
+### chordsym.transpose.transposition_table(symbols, semitones, , key=None, dialect='default')
 
 The chords of a song moved by `semitones`, spelled for the new key.
 
 `symbols` are the song’s chords in order (they give the key when `key` is
 not given). Returns `{"semitones", "key", "chords"}`: the new key’s name
 (`""` when there are no chords) and `{original: transposed}` over the
-distinct chords, in order of first appearance.
+distinct chords, in order of first appearance. `dialect` (as in
+[`chordsym.parse_chord()`](_autosummary/chordsym.html.md#chordsym.parse_chord)) is how `symbols` are spelled for the key estimate;
+each chord is moved by [`transpose_chord()`](_autosummary/chordsym.transpose.html.md#chordsym.transpose.transpose_chord), which reads the default spelling only.
 
 ```pycon
 >>> transposition_table(["G", "D", "Em", "C", "G"], 3)
@@ -428,18 +626,18 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-11-10 07:53 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29"><code>e7c64db</code></a> on branch <code>main</code>, for **chordsym 0.0.2** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-10 10:22 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5"><code>09f3563</code></a> on branch <code>main</code>, for **chordsym 0.0.3** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install chordsym` gives newer code than these docs describe.
+- The documented version (0.0.3) is behind the latest release on PyPI (0.0.4): `pip install chordsym` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29"><code>e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5"><code>09f356311b6de019cc76c48cbaf3fc4dbfb935d5</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -450,9 +648,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42778339845">42778339845</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42798386120">42798386120</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29</code> (in the history of the built commit) |
+| Event commit | <code>09f356311b6de019cc76c48cbaf3fc4dbfb935d5</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -477,13 +675,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/chordsym/0.0.3/">0.0.3</a>, newer than the documented version (0.0.2).
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.4/">0.0.4</a>, newer than the documented version (0.0.3).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout e7c64db0e33e4bb46031bdfc2ff3f04b01dc2f29
+git checkout 09f356311b6de019cc76c48cbaf3fc4dbfb935d5
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

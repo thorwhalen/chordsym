@@ -2,7 +2,7 @@
 <html lang="en" data-accent-color="cyan" data-content_root="../">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>chordsym.keys - chordsym</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="chordsym.parse" href="chordsym.parse.html" /><link rel="prev" title="chordsym" href="chordsym.html" /><script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>chordsym.keys - chordsym</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="chordsym.parse" href="chordsym.parse.html" /><link rel="prev" title="chordsym.dialects" href="chordsym.dialects.html" /><script>
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
@@ -66,6 +66,7 @@ data-aria-dark="Switch to auto color mode">
         <div class="globaltoc" data-expand-depth="0"><ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="chordsym.html">chordsym</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="chordsym.dialects.html">chordsym.dialects</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">chordsym.keys</a></li>
 <li class="toctree-l3"><a class="reference internal" href="chordsym.parse.html">chordsym.parse</a></li>
 <li class="toctree-l3"><a class="reference internal" href="chordsym.transpose.html">chordsym.transpose</a></li>
@@ -142,10 +143,10 @@ data-aria-dark="Switch to auto color mode">
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#chordsym.keys.chord_function" title="chordsym.keys.chord_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chord_function</span></code></a>(symbol, key)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#chordsym.keys.chord_function" title="chordsym.keys.chord_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chord_function</span></code></a>(symbol, key, *[, dialect])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&quot;tonic&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;diatonic&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;outside&quot;</span></code> in <code class="docutils literal notranslate"><span class="pre">key</span></code>; None if <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is not a chord.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#chordsym.keys.estimate_key" title="chordsym.keys.estimate_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">estimate_key</span></code></a>(symbols)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#chordsym.keys.estimate_key" title="chordsym.keys.estimate_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">estimate_key</span></code></a>(symbols, *[, dialect])</p></td>
 <td><p>The key that best explains a song's chords, in order; None if there are no chords.</p></td>
 </tr>
 </tbody>
@@ -172,8 +173,9 @@ data-aria-dark="Switch to auto color mode">
 
 <dl class="py function">
 <dt class="sig sig-object py" id="chordsym.keys.chord_function">
-<span class="sig-prename descclassname"><span class="pre">chordsym.keys.</span></span><span class="sig-name descname"><span class="pre">chord_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/keys.html#chord_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.keys.chord_function" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">chordsym.keys.</span></span><span class="sig-name descname"><span class="pre">chord_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dialect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/keys.html#chord_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.keys.chord_function" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">&quot;tonic&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;diatonic&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;outside&quot;</span></code> in <code class="docutils literal notranslate"><span class="pre">key</span></code>; None if <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is not a chord.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dialect</span></code> names how <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is spelled, as in <a class="reference internal" href="chordsym.html#chordsym.parse_chord" title="chordsym.parse_chord"><code class="xref py py-func docutils literal notranslate"><span class="pre">chordsym.parse_chord()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
@@ -183,11 +185,16 @@ data-aria-dark="Switch to auto color mode">
 
 <dl class="py function">
 <dt class="sig sig-object py" id="chordsym.keys.estimate_key">
-<span class="sig-prename descclassname"><span class="pre">chordsym.keys.</span></span><span class="sig-name descname"><span class="pre">estimate_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/keys.html#estimate_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.keys.estimate_key" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">chordsym.keys.</span></span><span class="sig-name descname"><span class="pre">estimate_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dialect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/keys.html#estimate_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.keys.estimate_key" title="Link to this definition">#</a></dt>
 <dd><p>The key that best explains a song’s chords, in order; None if there are no chords.</p>
 <p>Each chord scores for a key when it belongs to it, and more when it is its
 tonic; a song that starts or ends on a key’s tonic chord scores extra for
-that key. Ties go to the major key, and to the lower tonic.</p>
+that key. Ties go to the major key, and to the lower tonic. <code class="docutils literal notranslate"><span class="pre">dialect</span></code> names
+how <code class="docutils literal notranslate"><span class="pre">symbols</span></code> are spelled, as in <a class="reference internal" href="chordsym.html#chordsym.parse_chord" title="chordsym.parse_chord"><code class="xref py py-func docutils literal notranslate"><span class="pre">chordsym.parse_chord()</span></code></a>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">estimate_key</span><span class="p">([</span><span class="s2">"Cs"</span><span class="p">,</span> <span class="s2">"Fs"</span><span class="p">,</span> <span class="s2">"Gs"</span><span class="p">,</span> <span class="s2">"Cs"</span><span class="p">],</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">"chordonomicon"</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">Key(tonic=1, minor=False)</span>
+</span></pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#chordsym.keys.Key" title="chordsym.keys.Key"><code class="xref py py-class docutils literal notranslate"><span class="pre">Key</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
@@ -203,10 +210,10 @@ that key. Ties go to the major key, and to the lower tonic.</p>
   </svg>
   <span>Back to top</span>
 </button><div class="navigation flex print:hidden"><div class="navigation-prev">
-    <a href="chordsym.html">
+    <a href="chordsym.dialects.html">
       <i class="i-lucide chevron-left"></i>
       <div class="page-info">
-        <span>Previous</span><div class="title">chordsym</div></div>
+        <span>Previous</span><div class="title">chordsym.dialects</div></div>
     </a>
   </div><div class="navigation-next">
     <a href="chordsym.parse.html">
@@ -237,7 +244,7 @@ that key. Ties go to the major key, and to the lower tonic.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../_static/documentation_options.js?v=47de8214"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
