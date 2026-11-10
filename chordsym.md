@@ -1,4 +1,4 @@
-> built 2026-11-10 10:22 UTC from 09f3563 (main) · chordsym 0.0.3. Details: build_info.json
+> built 2026-11-10 10:40 UTC from 8876d3b (main) · chordsym 0.0.4. Details: build_info.json
 
 # index.html.md
 
@@ -64,7 +64,7 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 - Python 3.12’s `sum()` compensates float rounding and JS’s left-to-right addition does not, so ties can break differently: sum in an explicit loop.
 - Test runners that compare with order-blind equality (`dict ==`, `toStrictEqual`) cannot catch an ordering bug: compare JSON text.
 
-Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
+Versions: one number for both. Each PyPI release writes its version into `ts/package.json` (wads’ `[tool.wads.ci.version].sync`), so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour; publish the npm package from a commit that changes only `ts/` (wads refuses an npm publish from a push that also releases the Python package).
 
 Seeded from songleaf (thorwhalen/songleaf#31). Planned: a Nashville/Roman dialect; pychord and music21 as test oracles only.
 
@@ -626,18 +626,16 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-11-10 10:22 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5"><code>09f3563</code></a> on branch <code>main</code>, for **chordsym 0.0.3** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-10 10:40 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/8876d3bd7c08b11a4e26ab83a12587fb61b249fc"><code>8876d3b</code></a> on branch <code>main</code>, for **chordsym 0.0.4** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.3) is behind the latest release on PyPI (0.0.4): `pip install chordsym` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5"><code>09f356311b6de019cc76c48cbaf3fc4dbfb935d5</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/8876d3bd7c08b11a4e26ab83a12587fb61b249fc"><code>8876d3bd7c08b11a4e26ab83a12587fb61b249fc</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -648,9 +646,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42798386120">42798386120</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42800997986">42800997986</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>09f356311b6de019cc76c48cbaf3fc4dbfb935d5</code> (in the history of the built commit) |
+| Event commit | <code>8876d3bd7c08b11a4e26ab83a12587fb61b249fc</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -675,13 +673,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/chordsym/0.0.4/">0.0.4</a>, newer than the documented version (0.0.3).
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.4/">0.0.4</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout 09f356311b6de019cc76c48cbaf3fc4dbfb935d5
+git checkout 8876d3bd7c08b11a4e26ab83a12587fb61b249fc
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

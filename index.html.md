@@ -60,7 +60,7 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 - Python 3.12’s `sum()` compensates float rounding and JS’s left-to-right addition does not, so ties can break differently: sum in an explicit loop.
 - Test runners that compare with order-blind equality (`dict ==`, `toStrictEqual`) cannot catch an ordering bug: compare JSON text.
 
-Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
+Versions: one number for both. Each PyPI release writes its version into `ts/package.json` (wads’ `[tool.wads.ci.version].sync`), so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour; publish the npm package from a commit that changes only `ts/` (wads refuses an npm publish from a push that also releases the Python package).
 
 Seeded from songleaf (thorwhalen/songleaf#31). Planned: a Nashville/Roman dialect; pychord and music21 as test oracles only.
 

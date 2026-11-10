@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-10T10:22:32Z",
+  "built_at": "2026-11-10T10:40:55Z",
   "package": {
     "name": "chordsym",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "display_name": "chordsym",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "09f356311b6de019cc76c48cbaf3fc4dbfb935d5",
-    "short_commit": "09f3563",
+    "commit": "8876d3bd7c08b11a4e26ab83a12587fb61b249fc",
+    "short_commit": "8876d3b",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/chordsym",
-    "commit_url": "https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5",
+    "commit_url": "https://github.com/thorwhalen/chordsym/commit/8876d3bd7c08b11a4e26ab83a12587fb61b249fc",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/chordsym",
-    "sha": "09f356311b6de019cc76c48cbaf3fc4dbfb935d5",
+    "sha": "8876d3bd7c08b11a4e26ab83a12587fb61b249fc",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "42798386120",
-    "run_url": "https://github.com/thorwhalen/chordsym/actions/runs/42798386120",
+    "run_id": "42800997986",
+    "run_url": "https://github.com/thorwhalen/chordsym/actions/runs/42800997986",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -61,15 +61,13 @@
   "pypi": {
     "checked": true,
     "latest": "0.0.4",
-    "relation": "behind",
+    "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/chordsym && cd chordsym\ngit checkout 09f356311b6de019cc76c48cbaf3fc4dbfb935d5\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/chordsym && cd chordsym\ngit checkout 8876d3bd7c08b11a4e26ab83a12587fb61b249fc\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": false,
-    "notes": [
-      "The documented version (0.0.3) is behind the latest release on PyPI (0.0.4): `pip install chordsym` gives newer code than these docs describe."
-    ]
+    "aligned": true,
+    "notes": []
   }
 }

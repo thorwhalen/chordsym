@@ -168,7 +168,7 @@ data-aria-dark="Switch to auto color mode">
 <li><p>Python 3.12’s <code class="docutils literal notranslate"><span class="pre">sum()</span></code> compensates float rounding and JS’s left-to-right addition does not, so ties can break differently: sum in an explicit loop.</p></li>
 <li><p>Test runners that compare with order-blind equality (<code class="docutils literal notranslate"><span class="pre">dict</span> <span class="pre">==</span></code>, <code class="docutils literal notranslate"><span class="pre">toStrictEqual</span></code>) cannot catch an ordering bug: compare JSON text.</p></li>
 </ul>
-<p>Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so <code class="docutils literal notranslate"><span class="pre">chordsym&#64;X.Y.Z</span></code> on npm and PyPI are the same behaviour).</p>
+<p>Versions: one number for both. Each PyPI release writes its version into <code class="docutils literal notranslate"><span class="pre">ts/package.json</span></code> (wads’ <code class="docutils literal notranslate"><span class="pre">[tool.wads.ci.version].sync</span></code>), so <code class="docutils literal notranslate"><span class="pre">chordsym&#64;X.Y.Z</span></code> on npm and PyPI are the same behaviour; publish the npm package from a commit that changes only <code class="docutils literal notranslate"><span class="pre">ts/</span></code> (wads refuses an npm publish from a push that also releases the Python package).</p>
 <p>Seeded from songleaf (thorwhalen/songleaf#31). Planned: a Nashville/Roman dialect; pychord and music21 as test oracles only.</p>
 <p class="epythet-aggregates">This documentation as a single file: <a href="chordsym.md">chordsym.md</a> (Markdown, for agents).</p>
 <div class="toctree-wrapper compound">
@@ -176,7 +176,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-10 10:22 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/09f356311b6de019cc76c48cbaf3fc4dbfb935d5">09f3563</a> (main) · chordsym 0.0.3 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-10 10:40 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/8876d3bd7c08b11a4e26ab83a12587fb61b249fc">8876d3b</a> (main) · chordsym 0.0.4 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -211,7 +211,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=47de8214"></script>
+      <script src="_static/documentation_options.js?v=8c5712d9"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
