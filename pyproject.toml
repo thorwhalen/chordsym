@@ -68,6 +68,16 @@ enabled = true
 skip_ci_marker = "[skip ci]"
 publish_marker = "[publish]"
 
+# The npm twin (ts/package.json) carries the same version as the PyPI release
+# that holds the same code: the publish job writes it at each release.
+[tool.wads.ci.version]
+sync = ["ts/package.json"]
+
+# The Python CI ignores ts/ (the npm twin has its own CI), except the grammar the
+# Python side generates there, which the Python tests check is current.
+[tool.wads.ci.trigger]
+include_paths = ["ts/src/grammar.generated.ts"]
+
 [tool.wads.ci.docs]
 enabled = true
 builder = "epythet"

@@ -4,12 +4,10 @@
 # To customize the workflow itself (rare), replace this file with the
 # full inline template `wads/data/github_ci_uv.yml` from i2mint/wads.
 #
-# Pinning: `@master` floats with wads. If you need version stability for
+# Pinning: `@master` floats with wads. If you need a stable job graph for
 # a release-sensitive repo, change `@master` to a wads tag (e.g. `@0.2.15`;
-# tags have no `v` prefix). A stub whose `secrets:` block passes the JSON
-# transport (the default below) needs a tag from a release after 0.2.14 —
-# older tags don't declare that secret and GitHub then rejects the
-# workflow at parse time.
+# tags have no `v` prefix). That freezes this workflow, not the actions it
+# calls, which still run at `@master`.
 # CI failure does not block a published release — it blocks the publish
 # step itself — so floating master is generally safe.
 #
@@ -26,25 +24,37 @@
 # action uses peaceiris/actions-gh-pages (branch-based) + REST API,
 # not the OIDC `actions/deploy-pages` flow.
 name: Continuous Integration
-# The TypeScript twin (ts/) has its own workflow (npm-ci-ts.yml); a change only there
-# does not re-run or re-release the Python package. The generated grammar file is the
-# exception: tests/test_grammar.py checks it against chordsym/_grammar.py.
 on:
   push:
-    paths: ["**", "!ts/**", "ts/src/grammar.generated.ts", "!.github/workflows/npm-ci-ts.yml"]
+    paths: ["**", "!ts/**", "!.github/workflows/npm-ci-ts.yml", "ts/src/grammar.generated.ts"]
   pull_request:
-    paths: ["**", "!ts/**", "ts/src/grammar.generated.ts", "!.github/workflows/npm-ci-ts.yml"]
+    paths: ["**", "!ts/**", "!.github/workflows/npm-ci-ts.yml", "ts/src/grammar.generated.ts"]
 jobs:
   ci:
     uses: i2mint/wads/.github/workflows/uv-ci.yml@master
     permissions:
       contents: write
       pages: write
-    # Transport (NAMED, legacy): explicitly passes only the secrets
-    # listed below (PYPI_PASSWORD + those declared in
-    # [tool.wads.ci.env]). Every name must be in the frozen wads
-    # superset (wads/ci_secrets.py) or GitHub rejects the workflow
-    # at parse time. The default JSON transport has no such limit;
-    # regenerate with `wads-migrate ci-to-stub` to switch.
+    # Transport (named): passes ONLY the secrets listed below — PYPI_PASSWORD
+    # (for the publish job) plus the secret behind each env var declared in
+    # [tool.wads.ci.env]. `wads-secrets add VAR_NAME` declares a var and adds
+    # its secret here. Every listed name must be declared by the reusable
+    # workflow (the superset in wads/ci_secrets.py) or GitHub rejects this
+    # workflow at parse time; a missing name is a one-line addition there.
+    # (Cross-owner `secrets: inherit` does not propagate secrets, so it
+    # cannot replace this list.)
+    #
+    # Opt-in alternative: `wads-migrate ci-to-stub --transport json` passes
+    # this repo's WHOLE secrets context — every secret it can read, including
+    # org-level ones — as one WADS_CI_SECRETS_JSON secret. GitHub's
+    # malicious-workflow scanner may hold runs that do that: `action_required`,
+    # zero jobs, no log (i2mint/wads#74, #101).
+    #
+    # *Which* of these become job env vars — and which are required — is
+    # driven entirely by [tool.wads.ci.env] in pyproject.toml; nothing is
+    # exported unless declared there. Non-sensitive values don't need a secret:
+    # use [tool.wads.ci.env].defaults (committed literals) or a repository
+    # *variable* (`gh variable set NAME`) — declared names fall back to
+    # repo variables automatically.
     secrets:
       PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
