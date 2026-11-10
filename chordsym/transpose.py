@@ -13,14 +13,16 @@ from collections.abc import Iterable
 from chordsym import _grammar
 from chordsym.dialects import Dialect, resolve_dialect
 from chordsym.keys import Key, estimate_key
-from chordsym.parse import _ACCIDENTALS, _PITCH_CLASSES, _compile, parse_chord
+from chordsym.parse import parse_chord
 
+_PITCH_CLASSES = _grammar.PITCH_CLASSES
+_ACCIDENTALS = _grammar.ACCIDENTALS
 _SHARP_NAMES = _grammar.SHARP_NAMES
 _FLAT_NAMES = _grammar.FLAT_NAMES
 _FLAT_MAJOR_TONICS = frozenset(_grammar.FLAT_MAJOR_TONICS)
 _FLAT_MINOR_TONICS = frozenset(_grammar.FLAT_MINOR_TONICS)
 #: Groups: lead, root, rest, bass, tail.
-_TRANSPOSABLE_RE = _compile("transposable")
+_TRANSPOSABLE_RE = _grammar.compile_pattern("transposable")
 
 
 def _check_semitones(semitones) -> None:

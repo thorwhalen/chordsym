@@ -66,7 +66,21 @@ DIALECT_BASSES = ["", "/Cs", "/E", "/Bb", "/3", "/b7", "/bb7", "/15", "(9)", " "
 HARTE_TAILS = (
     list(_grammar.HARTE_SHORTHANDS)
     + [f"({intervals})" for intervals in _grammar.HARTE_INTERVAL_SETS]
-    + [f"maj({d})" for d in _grammar.HARTE_ADDED]
+    + [f"maj({degree})" for degree, _ in _grammar.HARTE_ADDED]
+    + [
+        f"{short}({seventh})"
+        for short in _grammar.HARTE_SEVENTHS
+        for seventh in ("b7", "7", "bb7")
+    ]
+    + [
+        "maj(b7,9)",
+        "min(b7,11)",
+        "maj(7,2)",
+        "sus4(b7,9)",
+        "maj(b7,13)",
+        "min(13,b7,9)",
+        "maj7(b7)",
+    ]
     + [
         "min7(9,11)",
         "maj(*3)",

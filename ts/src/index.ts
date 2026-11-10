@@ -17,6 +17,7 @@ export {
   harte,
   registerDialect,
   resolveDialect,
+  unregisterDialect,
   type Dialect,
   type DialectOptions,
 } from "./dialects.js";

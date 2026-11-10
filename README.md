@@ -51,6 +51,7 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 
 - `%` keeps the sign of the dividend in JS (`-1 % 12 === -1`), of the divisor in Python: use a `mod` helper.
 - A JS object reorders integer-like keys (`"2"`, `"10"` come first) and treats `"__proto__"` specially: an ordered mapping is a `Map`.
+- The same holds for a shared table: a Python dict generated as a JS object loses its order if a key is integer-like, so a table whose order matters is a list of pairs (`HARTE_ADDED`), and a test fails if TypeScript iterates a table with integer-like keys. Look keys up with an own-property check (`Object.hasOwn`), or `"constructor"` is found.
 - `re.match` anchors at the start only; in JS that is a sticky (`y`) regex whose `lastIndex` must be reset. `re.fullmatch` is `^(?:…)$`.
 - Python's `\d`, `\s` and `\w` are Unicode-aware and JS's are not, or differ at the edges; `str.strip()` and `String.trim()` remove different characters.
 - `^\s+|\s+$` is quadratic in JS on long runs of spaces; trim with an index loop.

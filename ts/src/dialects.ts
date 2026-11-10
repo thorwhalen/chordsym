@@ -10,6 +10,7 @@ import {
   HARTE_ADDED,
   HARTE_DEGREES,
   HARTE_INTERVAL_SETS,
+  HARTE_SEVENTHS,
   HARTE_SHORTHANDS,
   PATTERNS,
   PITCH_CLASSES,
@@ -39,17 +40,28 @@ function rewriter(rules: readonly (readonly [string, string])[]): Dialect {
 }
 
 const HARTE_RE = new RegExp(`^(?:${PATTERNS.harte[0]})$`, "u" + PATTERNS.harte[1]);
-const ADDED_ORDER: readonly string[] = Object.keys(HARTE_ADDED);
-const ADDED: Readonly<Record<string, string>> = HARTE_ADDED;
+// HARTE_ADDED is a list of pairs: its order matters, and an object's keys would not keep it.
+const ADDED: ReadonlyMap<string, string> = new Map(HARTE_ADDED);
+const ADDED_ORDER: readonly string[] = HARTE_ADDED.map(([degree]) => degree);
 const SHORTHANDS: Readonly<Record<string, string>> = HARTE_SHORTHANDS;
+const SEVENTHS: Readonly<Record<string, Readonly<Record<string, string>>>> = HARTE_SEVENTHS;
 const INTERVAL_SETS: Readonly<Record<string, string>> = HARTE_INTERVAL_SETS;
 const DEGREES: Readonly<Record<string, number>> = HARTE_DEGREES;
+const SEVENTH_DEGREES: readonly string[] = ["b7", "7", "bb7"];
 
-function harteAdded(intervals: string): string | undefined {
+/** The default suffix of `shorthand` with the degrees `intervals` added. */
+function harteSuffix(shorthand: string, intervals: string): string | undefined {
   const items = intervals.split(",");
-  if (!items.every((item) => own(ADDED, item) !== undefined)) return undefined;
-  items.sort((a, b) => ADDED_ORDER.indexOf(a) - ADDED_ORDER.indexOf(b));
-  return items.map((item) => ADDED[item]).join("");
+  const sevenths = items.filter((item) => SEVENTH_DEGREES.includes(item));
+  const others = items.filter((item) => !sevenths.includes(item));
+  if (sevenths.length > 1 || !others.every((item) => ADDED.has(item))) return undefined;
+  const suffix =
+    sevenths.length > 0
+      ? own(own(SEVENTHS, shorthand) ?? {}, sevenths[0])
+      : own(SHORTHANDS, shorthand);
+  if (suffix === undefined) return undefined;
+  others.sort((a, b) => ADDED_ORDER.indexOf(a) - ADDED_ORDER.indexOf(b));
+  return suffix + others.map((item) => ADDED.get(item)).join("");
 }
 
 /**
@@ -64,13 +76,8 @@ export function harte(symbol: string): string {
   let suffix: string | undefined;
   if (shorthand === undefined) suffix = ""; // no colon: "C" is C:maj
   else if (shorthand === "") suffix = own(INTERVAL_SETS, intervals); // "C:(1,b3,5)"
-  else {
-    suffix = own(SHORTHANDS, shorthand);
-    if (suffix !== undefined && intervals !== undefined) {
-      const added = harteAdded(intervals);
-      suffix = added === undefined ? undefined : suffix + added;
-    }
-  }
+  else if (intervals === undefined) suffix = own(SHORTHANDS, shorthand);
+  else suffix = harteSuffix(shorthand, intervals);
   if (suffix === undefined) return "";
   let out = lead + letter + accidental + suffix;
   if (bass !== undefined) {
@@ -79,7 +86,9 @@ export function harte(symbol: string): string {
     const root =
       (PITCH_CLASSES as Record<string, number>)[letter]! +
       (ACCIDENTALS as Record<string, number>)[accidental]!;
-    const names = accidental === "b" ? FLAT_NAMES : SHARP_NAMES;
+    // Spelled with flats under a flat root, or a flat degree under a natural root.
+    const flats = accidental === "b" || (accidental === "" && bass.startsWith("b"));
+    const names = flats ? FLAT_NAMES : SHARP_NAMES;
     out += "/" + names[(((root + interval) % 12) + 12) % 12];
   }
   return out + trail;
@@ -91,8 +100,7 @@ const BUILTIN: ReadonlyMap<string, Dialect> = new Map<string, Dialect>([
 ]);
 const REGISTRY = new Map<string, Dialect>(BUILTIN);
 
-/** Dialect name -> its function (read-only; add a dialect with `registerDialect`). */
-export const DIALECTS: ReadonlyMap<string, Dialect> = {
+const view: ReadonlyMap<string, Dialect> = {
   get: (name) => REGISTRY.get(name),
   has: (name) => REGISTRY.has(name),
   get size() {
@@ -104,6 +112,8 @@ export const DIALECTS: ReadonlyMap<string, Dialect> = {
   forEach: (fn, thisArg) => REGISTRY.forEach((v, k) => fn.call(thisArg, v, k, DIALECTS)),
   [Symbol.iterator]: () => REGISTRY[Symbol.iterator](),
 };
+/** Dialect name -> its function (read-only; add a dialect with `registerDialect`). */
+export const DIALECTS: ReadonlyMap<string, Dialect> = Object.freeze(view);
 
 /** Make `normalise` (a pure string -> string) readable as `{ dialect: name }`; returns it. */
 export function registerDialect(name: string, normalise: Dialect): Dialect {
@@ -116,6 +126,16 @@ export function registerDialect(name: string, normalise: Dialect): Dialect {
   }
   REGISTRY.set(name, normalise);
   return normalise;
+}
+
+/** Forget a dialect added with `registerDialect` (built-ins stay). */
+export function unregisterDialect(name: string): void {
+  if (BUILTIN.has(name)) {
+    throw new RangeError(`chordsym: ${JSON.stringify(name)} is a built-in dialect and cannot be removed`);
+  }
+  if (!REGISTRY.delete(name)) {
+    throw new RangeError(`chordsym: no registered dialect ${JSON.stringify(name)}`);
+  }
 }
 
 /**

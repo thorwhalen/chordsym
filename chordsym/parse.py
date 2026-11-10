@@ -27,20 +27,15 @@ from chordsym.dialects import Dialect, resolve_dialect
 PARSE_CACHE_SIZE = 8192
 
 
-def _compile(name: str) -> re.Pattern:
-    source, flags = _grammar.PATTERNS[name]
-    return re.compile(source, re.DOTALL if "s" in flags else 0)
-
-
-_CHORD_RE = _compile("chord")
-_ROOT_RE = _compile("root")
-_DIMINISHED_RE = _compile("diminished")
-_POWER_RE = _compile("power")
-_NOTE_RE = _compile("note")
-_MAJOR_SEVENTH_RE = _compile("major_seventh")
-_SEVENTH_RE = _compile("seventh")
-_SIXTH_RE = _compile("sixth")
-_NINTH_RE = _compile("ninth")
+_CHORD_RE = _grammar.compile_pattern("chord")
+_ROOT_RE = _grammar.compile_pattern("root")
+_DIMINISHED_RE = _grammar.compile_pattern("diminished")
+_POWER_RE = _grammar.compile_pattern("power")
+_NOTE_RE = _grammar.compile_pattern("note")
+_MAJOR_SEVENTH_RE = _grammar.compile_pattern("major_seventh")
+_SEVENTH_RE = _grammar.compile_pattern("seventh")
+_SIXTH_RE = _grammar.compile_pattern("sixth")
+_NINTH_RE = _grammar.compile_pattern("ninth")
 _PITCH_CLASSES = _grammar.PITCH_CLASSES
 _ACCIDENTALS = _grammar.ACCIDENTALS
 

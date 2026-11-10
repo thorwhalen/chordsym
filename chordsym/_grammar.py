@@ -22,6 +22,8 @@ by running the same cases on both sides.
 ['chord', 'diminished', 'harte']
 """
 
+import re
+
 #: Whitespace, as a character-class body: exactly the characters Python's ``str.isspace``
 #: accepts (what ``str.strip()`` removes), written out so a JavaScript ``RegExp`` (whose
 #: ``\s`` lacks ``\x1c``-``\x1f`` and ``\x85`` and adds ``\ufeff``) matches the same set.
@@ -134,25 +136,36 @@ HARTE_INTERVAL_SETS = {
     "1,5": "5",
 }
 
-#: Degrees added in parentheses after a shorthand (``C:maj(9)`` is ``Cadd9``), as default
-#: suffix pieces; sevenths come first, then added degrees, then altered ones in
-#: parentheses. A list with any other item (an omission such as ``*3``) is not read.
-HARTE_ADDED = {
-    "b7": "7",
-    "7": "maj7",
-    "2": "add2",
-    "4": "add4",
-    "6": "add6",
-    "9": "add9",
-    "11": "add11",
-    "13": "add13",
-    "b5": "(b5)",
-    "#5": "(#5)",
-    "b9": "(b9)",
-    "#9": "(#9)",
-    "#11": "(#11)",
-    "b13": "(b13)",
+#: A seventh added in parentheses, by shorthand: ``C:min(b7)`` is ``Cm7``, ``C:sus4(b7)``
+#: is ``C7sus4``, ``C:dim(b7)`` is ``Cm7b5``. A seventh added to any other shorthand is
+#: not read. (Looked up only: a JavaScript object reorders integer-like keys.)
+HARTE_SEVENTHS = {
+    "maj": {"b7": "7", "7": "maj7"},
+    "min": {"b7": "m7", "7": "mmaj7"},
+    "dim": {"bb7": "dim7", "b7": "m7b5"},
+    "aug": {"b7": "aug7", "7": "augmaj7"},
+    "sus4": {"b7": "7sus4", "7": "sus4maj7"},
+    "sus2": {"b7": "7sus2", "7": "sus2maj7"},
 }
+
+#: Other degrees added in parentheses after a shorthand (``C:maj(9)`` is ``Cadd9``), as
+#: default suffix pieces appended in this order (pairs, not a mapping, because the order
+#: matters and a JavaScript object would put integer-like keys first). A list with any
+#: other item (an omission such as ``*3``) is not read.
+HARTE_ADDED = (
+    ("2", "add2"),
+    ("4", "add4"),
+    ("6", "add6"),
+    ("9", "add9"),
+    ("11", "add11"),
+    ("13", "add13"),
+    ("b5", "(b5)"),
+    ("#5", "(#5)"),
+    ("b9", "(b9)"),
+    ("#9", "(#9)"),
+    ("#11", "(#11)"),
+    ("b13", "(b13)"),
+)
 
 #: A Harte bass degree -> semitones above the root (``C:maj/3`` has an E in the bass).
 HARTE_DEGREES = {
@@ -180,6 +193,13 @@ HARTE_DEGREES = {
     "b13": 8,
     "13": 9,
 }
+
+
+def compile_pattern(name: str) -> re.Pattern:
+    """The compiled :data:`PATTERNS` entry ``name`` (Python side only; not generated)."""
+    source, flags = PATTERNS[name]
+    return re.compile(source, re.DOTALL if "s" in flags else 0)
+
 
 #: Natural-note pitch classes and accidental offsets.
 PITCH_CLASSES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}

@@ -6,7 +6,8 @@ export const PATTERNS = {"chord": ["[*.]{0,3}\\(?[A-G][#b]?(?:maj|min|dim|aug|su
 export const DIALECT_REWRITES = {"default": [], "chordonomicon": [["(?<=[A-G])s(?!us)", "#"], ["(?<!u)s(?=[0-9])", "#"], ["(?:(?<=[A-G])|(?<=[A-G][#b]))no3d", "5"]]} as const;
 export const HARTE_SHORTHANDS = {"maj": "", "min": "m", "dim": "dim", "aug": "aug", "maj7": "maj7", "min7": "m7", "7": "7", "dim7": "dim7", "hdim7": "m7b5", "minmaj7": "mmaj7", "maj6": "6", "min6": "m6", "9": "9", "maj9": "maj9", "min9": "m9", "11": "11", "min11": "m11", "13": "13", "maj13": "maj13", "min13": "m13", "sus2": "sus2", "sus4": "sus4", "5": "5"} as const;
 export const HARTE_INTERVAL_SETS = {"1,3,5": "", "1,b3,5": "m", "1,3,5,b7": "7", "1,b3,5,b7": "m7", "1,5": "5"} as const;
-export const HARTE_ADDED = {"b7": "7", "7": "maj7", "2": "add2", "4": "add4", "6": "add6", "9": "add9", "11": "add11", "13": "add13", "b5": "(b5)", "#5": "(#5)", "b9": "(b9)", "#9": "(#9)", "#11": "(#11)", "b13": "(b13)"} as const;
+export const HARTE_SEVENTHS = {"maj": {"b7": "7", "7": "maj7"}, "min": {"b7": "m7", "7": "mmaj7"}, "dim": {"bb7": "dim7", "b7": "m7b5"}, "aug": {"b7": "aug7", "7": "augmaj7"}, "sus4": {"b7": "7sus4", "7": "sus4maj7"}, "sus2": {"b7": "7sus2", "7": "sus2maj7"}} as const;
+export const HARTE_ADDED = [["2", "add2"], ["4", "add4"], ["6", "add6"], ["9", "add9"], ["11", "add11"], ["13", "add13"], ["b5", "(b5)"], ["#5", "(#5)"], ["b9", "(b9)"], ["#9", "(#9)"], ["#11", "(#11)"], ["b13", "(b13)"]] as const;
 export const HARTE_DEGREES = {"1": 0, "b2": 1, "2": 2, "#2": 3, "b3": 3, "3": 4, "4": 5, "#4": 6, "b5": 6, "5": 7, "#5": 8, "b6": 8, "6": 9, "bb7": 9, "b7": 10, "7": 11, "b9": 1, "9": 2, "#9": 3, "11": 5, "#11": 6, "b13": 8, "13": 9} as const;
 export const PITCH_CLASSES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11} as const;
 export const ACCIDENTALS = {"#": 1, "b": -1, "": 0} as const;

@@ -20,7 +20,7 @@ from chordsym import (
 from chordsym import _grammar
 from chordsym._fixtures import load
 from chordsym.keys import _function
-from chordsym.dialects import _REGISTRY, register_dialect
+from chordsym.dialects import register_dialect, unregister_dialect
 from chordsym.parse import PARSE_CACHE_SIZE, _parse
 
 
@@ -74,7 +74,12 @@ def test_dialects_are_extensible():
         assert estimate_key(["am", "dm", "e7"], dialect="lower") == Key(9, minor=True)
         assert "lower" in DIALECTS
     finally:
-        del _REGISTRY["lower"]
+        unregister_dialect("lower")
+    assert "lower" not in DIALECTS
+    with pytest.raises(ValueError):
+        unregister_dialect("lower")
+    with pytest.raises(ValueError):
+        unregister_dialect("harte")
 
 
 def test_built_in_dialects_are_read_only():
@@ -86,6 +91,15 @@ def test_built_in_dialects_are_read_only():
         register_dialect("mine", "not a function")
     with pytest.raises(TypeError):
         parse_chord("C", dialect=None)
+
+    class Unhashable:
+        __hash__ = None
+
+        def __call__(self, symbol):
+            return symbol
+
+    with pytest.raises(TypeError, match="hashable"):
+        parse_chord("C", dialect=Unhashable())
 
 
 def test_parse_chord_is_memoised_on_symbol_and_dialect():
