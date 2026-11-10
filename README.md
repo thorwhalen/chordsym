@@ -12,13 +12,13 @@ Chord symbols without dependencies (standard library only): is this token a chor
 {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}
 ```
 
-It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`, `C∆`, `CmΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
 
-Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function` and `estimate_key`), which rewrites a symbol into the default spelling first; `chordsym.DIALECTS` maps each name to its function, and a new entry adds a dialect:
+Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function`, `estimate_key`, and `transposition_table` for its key estimate), which rewrites a symbol into the default spelling first. A dialect is a name in `chordsym.DIALECTS` or any pure function `str -> str` (results are cached per function); `chordsym.dialects.register_dialect(name, func)` adds a name. `transpose_chord` takes no dialect, since its output keeps the input's spelling: it moves default spellings only.
 
 - `"default"`: the chart spellings above.
 - `"chordonomicon"`: the Chordonomicon corpus, sharps written `s` (`Cs`, `Fsmin`, `A/Cs`) and power chords `no3d` (`Gno3d` is `G5`).
-- `"harte"`: Harte's `root:shorthand` (`C:maj7`, `A:min`, `B:hdim7`, `G:(1,5)`); a degree bass (`C:maj/3`) is ignored, and `N` (no chord) is not a chord.
+- `"harte"`: Harte's `root:shorthand` (`C:maj7`, `A:min`, `B:hdim7`), added degrees in parentheses (`C:maj(9)` is `Cadd9`), a degree bass (`C:maj/3` has E in the bass), and the common interval lists `(1,3,5)`, `(1,b3,5)`, `(1,3,5,b7)`, `(1,b3,5,b7)`, `(1,5)`. Any other interval list, an omitted degree (`*3`), `N` (no chord) and `X` are not read as chords.
 
 ```python
 >>> parse_chord("Fsmin", dialect="chordonomicon"), chord_tones("B:hdim7", dialect="harte")

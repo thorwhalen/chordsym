@@ -14,6 +14,6 @@ parseChord("Fsmin", { dialect: "chordonomicon" }); // [6, "minor"]
 parseChord("B:hdim7", { dialect: "harte" });        // [11, "diminished"]
 ```
 
-Dialects (`"default"`, `"chordonomicon"`, `"harte"`) are the keys of the exported `DIALECTS` map; the repository README describes each.
+A dialect is a name in the exported read-only `DIALECTS` map (`"default"`, `"chordonomicon"`, `"harte"`; `registerDialect` adds one) or a pure function `string -> string`; the repository README describes each.
 
 This is the twin of the Python package [`chordsym`](https://pypi.org/project/chordsym/), in the same repository: both read one grammar and pass the same golden cases (`fixtures/cases.json`), so they give the same answer for the same input. See the [repository README](https://github.com/thorwhalen/chordsym#readme).

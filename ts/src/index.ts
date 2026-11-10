@@ -11,15 +11,15 @@
  * transposeChord("C/E", 3, { flats: true }); // "Eb/G"
  * estimateKey(["Am", "Dm", "E7"]);           // { tonic: 9, minor: true }
  */
+export { chordTones, isChordToken, parseChord, type Quality } from "./parse.js";
 export {
-  chordTones,
   DIALECTS,
-  isChordToken,
-  parseChord,
+  harte,
+  registerDialect,
+  resolveDialect,
   type Dialect,
   type DialectOptions,
-  type Quality,
-} from "./parse.js";
+} from "./dialects.js";
 export {
   chordFunction,
   estimateKey,

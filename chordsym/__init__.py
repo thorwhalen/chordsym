@@ -8,7 +8,8 @@
 """
 
 from chordsym.keys import Key, chord_function, estimate_key
-from chordsym.parse import DIALECTS, chord_tones, is_chord_token, parse_chord
+from chordsym.dialects import DIALECTS, Dialect
+from chordsym.parse import chord_tones, is_chord_token, parse_chord
 from chordsym.transpose import (
     key_name,
     transpose_chord,
@@ -18,6 +19,7 @@ from chordsym.transpose import (
 
 __all__ = [
     "DIALECTS",
+    "Dialect",
     "Key",
     "chord_function",
     "chord_tones",

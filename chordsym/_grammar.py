@@ -19,7 +19,7 @@ Every pattern here must mean the same thing in Python's ``re`` and in a JavaScri
 by running the same cases on both sides.
 
 >>> sorted(PATTERNS)[:3]
-['chord', 'diminished', 'major_seventh']
+['chord', 'diminished', 'harte']
 """
 
 #: Whitespace, as a character-class body: exactly the characters Python's ``str.isspace``
@@ -36,7 +36,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
     "chord": (
         r"[*.]{0,3}\(?"  # leading marks: *D, ...Dm6
         r"[A-G][#b]?"  # root
-        r"(?:maj|min|dim|aug|sus|add|m|M|\+|°|º|ø|o(?=7)|Δ)?"  # quality; o7 = °7, Δ = maj7
+        # quality; o7 = °7; Δ or ∆ = maj7, mΔ7 or -Δ7 = minor-major seventh
+        r"(?:maj|min|dim|aug|sus|add|[m\-]?[Δ∆]|m|M|\+|°|º|ø|o(?=7))?"
         r"[0-9]{0,2}[M+\-]?"  # extension: 7, 9, 13; Brazilian 7M, 7+, 5-
         r"(?:sus[0-9]{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)[0-9]{1,2}[+\-]?)*"  # b5, add9
         r"(?:/(?:[#b]?[0-9]{1,2}[+\-#b]?|sus[0-9]{0,2}))*"  # stacked: 7/9, 5-/7, 7/sus4
@@ -54,8 +55,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
     # A note name: letter and optional accidental, at the start of a string.
     "note": (r"([A-G])([#b]?)", ""),
     # Seventh and extension markers, searched anywhere in what follows the root.
-    # (A bare ``Δ`` is a major seventh on its own: ``CΔ`` = ``Cmaj7``.)
-    "major_seventh": (r"(?:maj|M)(?:7|9|11|13)|Δ", ""),
+    # (A bare ``Δ`` or ``∆`` is a major seventh on its own: ``CΔ`` = ``Cmaj7``.)
+    "major_seventh": (r"(?:maj|M)(?:7|9|11|13)|[Δ∆]", ""),
     "seventh": (r"(?<!add)(7|9|11|13)", ""),
     "sixth": (r"(?<![0-9])6", ""),
     "ninth": (r"9|add2", ""),
@@ -66,14 +67,38 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"([*.(" + WS + r"]*)([A-G][#b]?)(.*?)(?:/([A-G][#b]?)([^/A-Za-z0-9#]*))?",
         "s",
     ),
+    # A Harte label (used with a whole-string match): lead, root letter, accidental, then
+    # ``:shorthand`` with an optional ``(interval list)``, then an optional ``/degree``
+    # bass, then trailing whitespace. Groups: lead, letter, accidental, shorthand, list,
+    # bass, trail.
+    "harte": (
+        r"([" + WS + r"]*)([A-G])([#b]?)"
+        r"(?::([^(/" + WS + r"]*)(?:\(([^()]*)\))?)?"
+        r"(?:/([#b]{0,2}[0-9]{1,2}))?([" + WS + r"]*)",
+        "",
+    ),
 }
 
-#: What may follow a Harte shorthand: a ``(`` (intervals), a ``/`` (bass), whitespace, or
-#: the end of the symbol (a negative lookahead, so no ``$`` is needed).
-_HARTE_END = r"(?![^(/" + WS + r"])"
+#: Dialect name -> the rewrites that turn its spelling into the default one, applied in
+#: order as ``(pattern, replacement)``: every match of the pattern is replaced by the
+#: replacement as literal text (no group references, which Python and JavaScript write
+#: differently). Harte is read by structure instead (``PATTERNS["harte"]`` and the
+#: ``HARTE_*`` tables), since its bass is a degree that depends on the root.
+#:
+#: - ``default``: the chart spellings :func:`chordsym.parse_chord` reads; no rewrite.
+#: - ``chordonomicon``: the Chordonomicon corpus writes ``#`` as ``s`` (``Cs``,
+#:   ``Fsmin``, ``A/Cs``, ``Emajs9``) and a power chord as ``no3d`` (``Gno3d``).
+DIALECT_REWRITES: dict[str, list[tuple[str, str]]] = {
+    "default": [],
+    "chordonomicon": [
+        (r"(?<=[A-G])s(?!us)", "#"),  # a sharp after a root or bass letter, not sus
+        (r"(?<!u)s(?=[0-9])", "#"),  # a sharp before a number (majs9), not sus4
+        (r"(?:(?<=[A-G])|(?<=[A-G][#b]))no3d", "5"),  # Gno3d is G5
+    ],
+}
 
 #: Harte (2005) shorthands and their default spellings (``C:hdim7`` reads as ``Cm7b5``).
-_HARTE_SHORTHANDS = {
+HARTE_SHORTHANDS = {
     "maj": "",
     "min": "m",
     "dim": "dim",
@@ -99,31 +124,61 @@ _HARTE_SHORTHANDS = {
     "5": "5",
 }
 
-#: Dialect name -> the rewrites that turn its spelling into the default one, applied in
-#: order as ``(pattern, replacement)``: every match of the pattern is replaced by the
-#: replacement as literal text (no group references, which Python and JavaScript write
-#: differently).
-#:
-#: - ``default``: the chart spellings :func:`chordsym.parse_chord` reads; no rewrite.
-#: - ``chordonomicon``: the Chordonomicon corpus writes ``#`` as ``s`` (``Cs``,
-#:   ``Fsmin``, ``A/Cs``, ``Emajs9``) and a power chord as ``no3d`` (``Gno3d``).
-#: - ``harte``: Harte's ``root:shorthand`` (``C:maj7``, ``A:min``, ``B:hdim7``,
-#:   ``G:(1,5)``); a ``/bass`` stays a scale degree (``C:maj/3``) and is ignored like a
-#:   stacked extension; ``N`` (no chord) and ``X`` are not chords.
-DIALECT_REWRITES: dict[str, list[tuple[str, str]]] = {
-    "default": [],
-    "chordonomicon": [
-        (r"(?<=[A-G])s(?!us)", "#"),  # a sharp after a root or bass letter, not sus
-        (r"(?<!u)s(?=[0-9])", "#"),  # a sharp before a number (majs9), not sus4
-        (r"(?:(?<=[A-G])|(?<=[A-G][#b]))no3d", "5"),  # Gno3d is G5
-    ],
-    "harte": [
-        (r":\(1,5\)" + _HARTE_END, "5"),
-        *(
-            (":" + short + _HARTE_END, spelled)
-            for short, spelled in _HARTE_SHORTHANDS.items()
-        ),
-    ],
+#: Harte interval lists without a shorthand (``C:(1,b3,5)``) that have a default spelling;
+#: any other list is not read.
+HARTE_INTERVAL_SETS = {
+    "1,3,5": "",
+    "1,b3,5": "m",
+    "1,3,5,b7": "7",
+    "1,b3,5,b7": "m7",
+    "1,5": "5",
+}
+
+#: Degrees added in parentheses after a shorthand (``C:maj(9)`` is ``Cadd9``), as default
+#: suffix pieces; sevenths come first, then added degrees, then altered ones in
+#: parentheses. A list with any other item (an omission such as ``*3``) is not read.
+HARTE_ADDED = {
+    "b7": "7",
+    "7": "maj7",
+    "2": "add2",
+    "4": "add4",
+    "6": "add6",
+    "9": "add9",
+    "11": "add11",
+    "13": "add13",
+    "b5": "(b5)",
+    "#5": "(#5)",
+    "b9": "(b9)",
+    "#9": "(#9)",
+    "#11": "(#11)",
+    "b13": "(b13)",
+}
+
+#: A Harte bass degree -> semitones above the root (``C:maj/3`` has an E in the bass).
+HARTE_DEGREES = {
+    "1": 0,
+    "b2": 1,
+    "2": 2,
+    "#2": 3,
+    "b3": 3,
+    "3": 4,
+    "4": 5,
+    "#4": 6,
+    "b5": 6,
+    "5": 7,
+    "#5": 8,
+    "b6": 8,
+    "6": 9,
+    "bb7": 9,
+    "b7": 10,
+    "7": 11,
+    "b9": 1,
+    "9": 2,
+    "#9": 3,
+    "11": 5,
+    "#11": 6,
+    "b13": 8,
+    "13": 9,
 }
 
 #: Natural-note pitch classes and accidental offsets.

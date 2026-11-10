@@ -20,6 +20,7 @@ from chordsym import (
 from chordsym import _grammar
 from chordsym._fixtures import load
 from chordsym.keys import _function
+from chordsym.dialects import _REGISTRY, register_dialect
 from chordsym.parse import PARSE_CACHE_SIZE, _parse
 
 
@@ -66,22 +67,44 @@ def test_dialects():
 
 
 def test_dialects_are_extensible():
-    DIALECTS["lower"] = str.capitalize
+    assert parse_chord("am", dialect=str.capitalize) == (9, "minor")  # a function
+    assert register_dialect("lower", str.capitalize) is str.capitalize
     try:
         assert parse_chord("am", dialect="lower") == (9, "minor")
         assert estimate_key(["am", "dm", "e7"], dialect="lower") == Key(9, minor=True)
+        assert "lower" in DIALECTS
     finally:
-        del DIALECTS["lower"]
+        del _REGISTRY["lower"]
+
+
+def test_built_in_dialects_are_read_only():
+    with pytest.raises(TypeError):
+        DIALECTS["mine"] = str.upper
+    with pytest.raises(ValueError, match="built-in"):
+        register_dialect("harte", str.upper)
+    with pytest.raises(TypeError):
+        register_dialect("mine", "not a function")
+    with pytest.raises(TypeError):
+        parse_chord("C", dialect=None)
 
 
 def test_parse_chord_is_memoised_on_symbol_and_dialect():
     assert _parse.cache_info().maxsize == PARSE_CACHE_SIZE
     _parse.cache_clear()
     first = parse_chord("Cs", dialect="chordonomicon")
-    assert parse_chord("Cs", dialect="chordonomicon") is first  # a cache hit
-    assert parse_chord("Cs") is None  # the dialect is part of the key
     assert isinstance(first, tuple)  # immutable, so sharing the cached value is safe
-    assert _parse.cache_info().hits == 1
+    assert (
+        parse_chord("Cs", dialect="chordonomicon") is first
+    )  # the same object: cached
+    assert parse_chord("Cs") is None  # the dialect is part of the key
+    calls = []
+
+    def counted(symbol):
+        calls.append(symbol)
+        return symbol
+
+    assert parse_chord("Am", dialect=counted) == parse_chord("Am", dialect=counted)
+    assert calls == ["Am"]  # the second call did not run the dialect
 
 
 def _estimate_key_per_chord(symbols):

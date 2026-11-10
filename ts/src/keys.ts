@@ -3,7 +3,8 @@
  * TypeScript twin of chordsym/keys.py.
  */
 import { KEY_WEIGHTS, MAJOR_KEY, MINOR_KEY } from "./grammar.generated.js";
-import { dialectOf, mod, parseChord, type DialectOptions, type Quality } from "./parse.js";
+import { resolveDialect, type DialectOptions } from "./dialects.js";
+import { mod, parseChord, type Quality } from "./parse.js";
 
 /** A key: its tonic as a pitch class (C = 0, ... B = 11), major or minor. */
 export interface Key {
@@ -69,10 +70,10 @@ export function chordFunction(
  * spelled, as in `parseChord`.
  */
 export function estimateKey(symbols: Iterable<string>, options: DialectOptions = {}): Key | null {
-  dialectOf(options); // an unknown dialect throws, even with no symbols
+  const dialect = resolveDialect(options.dialect); // an unknown dialect throws, even with no symbols
   const chords: [number, Quality][] = [];
   for (const symbol of symbols) {
-    const parsed = parseChord(symbol, options);
+    const parsed = parseChord(symbol, { dialect });
     if (parsed !== null) chords.push(parsed);
   }
   if (chords.length === 0) return null;

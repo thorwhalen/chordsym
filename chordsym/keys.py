@@ -16,7 +16,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from chordsym import _grammar
-from chordsym.parse import _dialect, _parse, parse_chord
+from chordsym.dialects import Dialect, resolve_dialect
+from chordsym.parse import parse_chord
 
 _MAJOR_KEY = {degree: set(qs) for degree, qs in _grammar.MAJOR_KEY.items()}
 _MINOR_KEY = {degree: set(qs) for degree, qs in _grammar.MINOR_KEY.items()}
@@ -46,7 +47,9 @@ def _function(parsed: tuple[int, str], key: Key) -> str:
     return "tonic" if degree == 0 else "diatonic"
 
 
-def chord_function(symbol: str, key: Key, *, dialect: str = "default") -> str | None:
+def chord_function(
+    symbol: str, key: Key, *, dialect: str | Dialect = "default"
+) -> str | None:
     """``"tonic"``, ``"diatonic"`` or ``"outside"`` in ``key``; None if ``symbol`` is not a chord.
 
     ``dialect`` names how ``symbol`` is spelled, as in :func:`chordsym.parse_chord`.
@@ -55,7 +58,9 @@ def chord_function(symbol: str, key: Key, *, dialect: str = "default") -> str | 
     return None if parsed is None else _function(parsed, key)
 
 
-def estimate_key(symbols: Iterable[str], *, dialect: str = "default") -> Key | None:
+def estimate_key(
+    symbols: Iterable[str], *, dialect: str | Dialect = "default"
+) -> Key | None:
     """The key that best explains a song's chords, in order; None if there are no chords.
 
     Each chord scores for a key when it belongs to it, and more when it is its
@@ -66,8 +71,10 @@ def estimate_key(symbols: Iterable[str], *, dialect: str = "default") -> Key | N
     >>> estimate_key(["Cs", "Fs", "Gs", "Cs"], dialect="chordonomicon")
     Key(tonic=1, minor=False)
     """
-    normalise = _dialect(dialect)  # an unknown dialect raises, even with no symbols
-    chords = [p for p in (_parse(s, normalise) for s in symbols) if p]
+    normalise = resolve_dialect(
+        dialect
+    )  # an unknown dialect raises, even with no symbols
+    chords = [p for p in (parse_chord(s, dialect=normalise) for s in symbols) if p]
     if not chords:
         return None
     # Each distinct chord is scored once per key, times how often it occurs. That equals

@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import chordsym  # noqa: E402
+from chordsym import _grammar  # noqa: E402
 
 ROOTS = [letter + acc for letter in "ABCDEFG" for acc in ("", "#", "b")]
 QUALITIES = [
@@ -49,7 +50,7 @@ QUALITIES = [
 ]
 EXTENSIONS = ["", "7", "9", "11", "13", "6", "7M", "7+", "5-", "b5", "#9", "sus2", "sus4", "add9",
               "6/9", "7/9", "4/7", "7(#9)", "(4/9)", "7(4)(9)", "m7b5", "maj7", "dim7", "/sus4",
-              "(b5)", "69", "add2", "no3", "Δ7", "Δ", "o7", "o7/E"]  # fmt: skip
+              "(b5)", "69", "add2", "no3", "Δ7", "Δ", "∆", "∆7", "o7", "o7/E"]  # fmt: skip
 BASSES = ["", "/E", "/G", "/F#", "/Bb", "/C", "/9", "/b13"]
 LEADS = ["", "*", "...", "(", " ", "\xa0", "　", "\x1c"]
 TRAILS = ["", ")", "*", " ", "\xa0", ")*"]
@@ -59,10 +60,24 @@ DIALECTS = ("default", "chordonomicon", "harte")
 DIALECT_ROOTS = ["C", "Cs", "C#", "Db", "Fs", "Bb", "As", "E"]
 DIALECT_SUFFIXES = ["", "min", "min7", "7", "maj7", "no3d", "sus4", "sus2", "add9", "majs9",
                     "dim7", "aug", "7sus4", "minadd11", "13"]  # fmt: skip
-DIALECT_BASSES = ["", "/Cs", "/E", "/Bb", "/3", "/b7", "(9)", " "]
-HARTE_SHORTHANDS = ["maj", "min", "dim", "aug", "maj7", "min7", "7", "dim7", "hdim7", "minmaj7",
-                    "maj6", "min6", "9", "maj9", "min9", "11", "min11", "13", "maj13", "min13",
-                    "sus2", "sus4", "5", "(1,5)", "foo", "(3,5)"]  # fmt: skip
+DIALECT_BASSES = ["", "/Cs", "/E", "/Bb", "/3", "/b7", "/bb7", "/15", "(9)", " "]
+#: Harte's part after the colon: every shorthand and interval set the grammar knows, added
+#: degrees, and some it does not read.
+HARTE_TAILS = (
+    list(_grammar.HARTE_SHORTHANDS)
+    + [f"({intervals})" for intervals in _grammar.HARTE_INTERVAL_SETS]
+    + [f"maj({d})" for d in _grammar.HARTE_ADDED]
+    + [
+        "min7(9,11)",
+        "maj(*3)",
+        "maj()",
+        "foo",
+        "(3,5)",
+        "",
+        "constructor",
+        "(toString)",
+    ]
+)
 
 _NODE = r"""
 import { readFileSync } from "node:fs";
@@ -104,9 +119,7 @@ def dialect_corpus() -> list[str]:
     ]
     out += [
         r + ":" + q + b
-        for r, q, b in itertools.product(
-            DIALECT_ROOTS, HARTE_SHORTHANDS, DIALECT_BASSES
-        )
+        for r, q, b in itertools.product(DIALECT_ROOTS, HARTE_TAILS, DIALECT_BASSES)
     ]
     return list(dict.fromkeys(out + ["N", "X", "<verse_1>"]))  # fmt: skip
 

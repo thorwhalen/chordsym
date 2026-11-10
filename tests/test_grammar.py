@@ -68,7 +68,7 @@ def test_dialect_rewrite_is_portable(name, i, source):
     pattern = re.compile(source)
     assert all(
         len(m.group()) > 0
-        for text in ("", "C", "C:maj", "Cs", "Gno3d", "Asus4/Cs")
+        for text in ("", "C", "Cs", "Gno3d", "Asus4/Cs", "Emajs9")
         for m in pattern.finditer(text)
     )
 
