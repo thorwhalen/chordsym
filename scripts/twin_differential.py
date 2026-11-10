@@ -9,6 +9,9 @@ reports any difference.
     (cd ts && npm run build) && python scripts/twin_differential.py
 
 Requires Node >= 20 and a built ``ts/dist``. Exits 1 on any mismatch.
+
+``python scripts/twin_differential.py --sample-into-fixtures 500`` instead refreshes a seeded
+sample of the corpus inside ``fixtures/cases.json``, so CI runs part of this net on both sides.
 """
 
 from __future__ import annotations
@@ -102,7 +105,51 @@ def python_outputs(tokens, songs):
     }  # fmt: skip
 
 
+def sample_into_fixtures(n: int, *, seed: int = 20261110) -> int:
+    """Replace the fixtures' corpus cases with a seeded sample of ``n`` generated tokens.
+
+    Each sampled token gets the per-token calls the differential makes (is a chord, parse,
+    tones, and a sharp and a flat transposition), tagged ``"source": "corpus"``; then
+    ``record()`` fills the expectations. So CI runs a slice of the wide net on both sides.
+    """
+    from chordsym._fixtures import dumps, load, record
+
+    data = load()
+    hand = [c for c in data["cases"] if c.get("source") != "corpus"]
+    seen = {c["args"][0] for c in hand if c["args"] and isinstance(c["args"][0], str)}
+    pool = [t for t in corpus() if t not in seen]
+    sample = random.Random(seed).sample(pool, n)
+    cases = []
+    for t in sample:
+        for fn in ("is_chord_token", "parse_chord", "chord_tones"):
+            cases.append({"fn": fn, "args": [t], "source": "corpus"})
+        cases.append(
+            {
+                "fn": "transpose_chord",
+                "args": [t, 5],
+                "kwargs": {"flats": False},
+                "source": "corpus",
+            }
+        )
+        cases.append(
+            {
+                "fn": "transpose_chord",
+                "args": [t, -1],
+                "kwargs": {"flats": True},
+                "source": "corpus",
+            }
+        )
+    data["cases"] = hand + cases
+    (ROOT / "fixtures" / "cases.json").write_text(dumps(data), encoding="utf-8")
+    record(ROOT)
+    return len(cases)
+
+
 def main() -> int:
+    if "--sample-into-fixtures" in sys.argv:
+        n = int(sys.argv[sys.argv.index("--sample-into-fixtures") + 1])
+        print(f"{sample_into_fixtures(n)} corpus cases written to fixtures/cases.json")
+        return 0
     tokens = corpus()
     rng = random.Random(7)
     songs = [
