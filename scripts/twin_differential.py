@@ -49,21 +49,33 @@ QUALITIES = [
 ]
 EXTENSIONS = ["", "7", "9", "11", "13", "6", "7M", "7+", "5-", "b5", "#9", "sus2", "sus4", "add9",
               "6/9", "7/9", "4/7", "7(#9)", "(4/9)", "7(4)(9)", "m7b5", "maj7", "dim7", "/sus4",
-              "(b5)", "69", "add2", "no3", "Δ7"]  # fmt: skip
+              "(b5)", "69", "add2", "no3", "Δ7", "Δ", "o7", "o7/E"]  # fmt: skip
 BASSES = ["", "/E", "/G", "/F#", "/Bb", "/C", "/9", "/b13"]
 LEADS = ["", "*", "...", "(", " ", "\xa0", "　", "\x1c"]
 TRAILS = ["", ")", "*", " ", "\xa0", ")*"]
 SHIFTS = (-13, -1, 1, 5, 11)
+DIALECTS = ("default", "chordonomicon", "harte")
+#: Dialect spellings: Chordonomicon roots and suffixes, Harte shorthands, and their basses.
+DIALECT_ROOTS = ["C", "Cs", "C#", "Db", "Fs", "Bb", "As", "E"]
+DIALECT_SUFFIXES = ["", "min", "min7", "7", "maj7", "no3d", "sus4", "sus2", "add9", "majs9",
+                    "dim7", "aug", "7sus4", "minadd11", "13"]  # fmt: skip
+DIALECT_BASSES = ["", "/Cs", "/E", "/Bb", "/3", "/b7", "(9)", " "]
+HARTE_SHORTHANDS = ["maj", "min", "dim", "aug", "maj7", "min7", "7", "dim7", "hdim7", "minmaj7",
+                    "maj6", "min6", "9", "maj9", "min9", "11", "min11", "13", "maj13", "min13",
+                    "sus2", "sus4", "5", "(1,5)", "foo", "(3,5)"]  # fmt: skip
 
 _NODE = r"""
 import { readFileSync } from "node:fs";
 const [dist, inputPath] = process.argv.slice(1);
 const c = await import(dist);
-const { tokens, songs } = JSON.parse(readFileSync(inputPath, "utf-8"));
+const { tokens, songs, dialectTokens, dialectSongs, dialects } = JSON.parse(readFileSync(inputPath, "utf-8"));
 const out = { tokens: tokens.map((t) => [c.isChordToken(t), c.parseChord(t), c.chordTones(t),
   [-13, -1, 1, 5, 11].flatMap((k) => [false, true].map((flats) => c.transposeChord(t, k, { flats })))]),
   songs: songs.map((s) => [c.estimateKey(s), ...[3, -4].map((k) => {
-    const r = c.transpositionTable(s, k); return { ...r, chords: [...r.chords] }; })]) };
+    const r = c.transpositionTable(s, k); return { ...r, chords: [...r.chords] }; })]),
+  dialectTokens: dialectTokens.map((t) => dialects.map((dialect) => [c.isChordToken(t, { dialect }),
+    c.parseChord(t, { dialect }), c.chordTones(t, { dialect })])),
+  dialectSongs: dialectSongs.map((s) => dialects.map((dialect) => c.estimateKey(s, { dialect }))) };
 process.stdout.write(JSON.stringify(out));
 """
 
@@ -82,7 +94,24 @@ def corpus(n_random: int = 3000, seed: int = 0) -> list[str]:
     return list(dict.fromkeys(out))
 
 
-def python_outputs(tokens, songs):
+def dialect_corpus() -> list[str]:
+    """Chordonomicon and Harte spellings: every root × suffix (or shorthand) × bass."""
+    out = [
+        r + q + b
+        for r, q, b in itertools.product(
+            DIALECT_ROOTS, DIALECT_SUFFIXES, DIALECT_BASSES
+        )
+    ]
+    out += [
+        r + ":" + q + b
+        for r, q, b in itertools.product(
+            DIALECT_ROOTS, HARTE_SHORTHANDS, DIALECT_BASSES
+        )
+    ]
+    return list(dict.fromkeys(out + ["N", "X", "<verse_1>"]))  # fmt: skip
+
+
+def python_outputs(tokens, songs, dialect_tokens=(), dialect_songs=()):
     """What the Python twin returns, in the JSON form the Node side produces."""
 
     def j(x):
@@ -102,6 +131,12 @@ def python_outputs(tokens, songs):
             for t in tokens
         ],
         "songs": [[key(chordsym.estimate_key(s)), table(s, 3), table(s, -4)] for s in songs],
+        "dialectTokens": [
+            [[chordsym.is_chord_token(t, dialect=d), j(chordsym.parse_chord(t, dialect=d)),
+              j(chordsym.chord_tones(t, dialect=d))] for d in DIALECTS]
+            for t in dialect_tokens
+        ],
+        "dialectSongs": [[key(chordsym.estimate_key(s, dialect=d)) for d in DIALECTS] for s in dialect_songs],
     }  # fmt: skip
 
 
@@ -155,21 +190,38 @@ def main() -> int:
     songs = [
         [rng.choice(tokens) for _ in range(rng.randint(0, 12))] for _ in range(3000)
     ]
+    dialect_tokens = dialect_corpus()
+    dialect_songs = [
+        [rng.choice(dialect_tokens) for _ in range(rng.randint(0, 12))]
+        for _ in range(1000)
+    ]
+    inputs = {
+        "tokens": tokens,
+        "songs": songs,
+        "dialectTokens": dialect_tokens,
+        "dialectSongs": dialect_songs,
+        "dialects": DIALECTS,
+    }
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-        json.dump({"tokens": tokens, "songs": songs}, f, ensure_ascii=False)
+        json.dump(inputs, f, ensure_ascii=False)
     dist = (ROOT / "ts" / "dist" / "index.js").as_uri()
     node = subprocess.run(
         ["node", "--input-type=module", "-e", _NODE, dist, f.name],
         capture_output=True, text=True, check=True,
     )  # fmt: skip
-    ts, py = json.loads(node.stdout), python_outputs(tokens, songs)
+    ts = json.loads(node.stdout)
+    py = python_outputs(tokens, songs, dialect_tokens, dialect_songs)
+    kinds = ("tokens", "songs", "dialectTokens", "dialectSongs")
     bad = [
-        (kind, inputs[i])
-        for kind, inputs in (("tokens", tokens), ("songs", songs))
+        (kind, inputs[kind][i])
+        for kind in kinds
         for i, (a, b) in enumerate(zip(ts[kind], py[kind]))
         if json.dumps(a) != json.dumps(b)
     ]
-    print(f"{len(tokens)} tokens, {len(songs)} songs: {len(bad)} mismatches")
+    print(
+        f"{len(tokens)} tokens, {len(songs)} songs, {len(dialect_tokens)} dialect tokens "
+        f"x {len(DIALECTS)} dialects, {len(dialect_songs)} dialect songs: {len(bad)} mismatches"
+    )
     for kind, item in bad[:10]:
         print(" ", kind, repr(item))
     return 1 if bad else 0

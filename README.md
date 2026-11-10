@@ -12,7 +12,18 @@ Chord symbols without dependencies (standard library only): is this token a chor
 {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}
 ```
 
-It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+
+Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function` and `estimate_key`), which rewrites a symbol into the default spelling first; `chordsym.DIALECTS` maps each name to its function, and a new entry adds a dialect:
+
+- `"default"`: the chart spellings above.
+- `"chordonomicon"`: the Chordonomicon corpus, sharps written `s` (`Cs`, `Fsmin`, `A/Cs`) and power chords `no3d` (`Gno3d` is `G5`).
+- `"harte"`: Harte's `root:shorthand` (`C:maj7`, `A:min`, `B:hdim7`, `G:(1,5)`); a degree bass (`C:maj/3`) is ignored, and `N` (no chord) is not a chord.
+
+```python
+>>> parse_chord("Fsmin", dialect="chordonomicon"), chord_tones("B:hdim7", dialect="harte")
+((6, 'minor'), (11, 2, 5, 9))
+```
 
 ## In the browser: the TypeScript twin
 
@@ -48,4 +59,4 @@ Traps the port had to handle, worth knowing before writing any Python/TypeScript
 
 Versions: an npm release carries the version of the Python release it was cut from (lockstep at release points, so `chordsym@X.Y.Z` on npm and PyPI are the same behaviour).
 
-Seeded from songleaf (thorwhalen/songleaf#31). Planned: dialects (Harte, Chordonomicon, Nashville/Roman) as strategies; pychord and music21 as test oracles only.
+Seeded from songleaf (thorwhalen/songleaf#31). Planned: a Nashville/Roman dialect; pychord and music21 as test oracles only.

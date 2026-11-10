@@ -8,13 +8,23 @@ Pure standard library. A pitch class is an int 0-11 (C = 0, C# = 1, ... B = 11).
 (10, 'major')
 >>> chord_tones("Cmaj7"), chord_tones("Am/G"), chord_tones("F#m7b5")
 ((0, 4, 7, 11), (7, 9, 0, 4), (6, 9, 0, 4))
+
+Other spellings are read through a ``dialect`` (see :data:`DIALECTS`):
+
+>>> parse_chord("Csmin", dialect="chordonomicon"), parse_chord("B:hdim7", dialect="harte")
+((1, 'minor'), (11, 'diminished'))
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
+from functools import lru_cache
 
 from chordsym import _grammar
+
+#: How many distinct ``(symbol, dialect)`` results :func:`parse_chord` remembers.
+PARSE_CACHE_SIZE = 8192
 
 
 def _compile(name: str) -> re.Pattern:
@@ -34,31 +44,76 @@ _NINTH_RE = _compile("ninth")
 _PITCH_CLASSES = _grammar.PITCH_CLASSES
 _ACCIDENTALS = _grammar.ACCIDENTALS
 
+#: A dialect: rewrites a chord symbol from its own spelling into the default one.
+Dialect = Callable[[str], str]
 
-def is_chord_token(token: str) -> bool:
+
+def _rewriter(rules: list[tuple[str, str]]) -> Dialect:
+    compiled = [(re.compile(source), replacement) for source, replacement in rules]
+
+    def rewrite(symbol: str) -> str:
+        for pattern, replacement in compiled:
+            # A function replacement keeps the text literal, as the TypeScript twin does.
+            symbol = pattern.sub(lambda _, r=replacement: r, symbol)
+        return symbol
+
+    return rewrite
+
+
+#: Dialect name -> its normalisation to the default spelling (``"default"``: identity).
+#: Built from ``_grammar.DIALECT_REWRITES``; add an entry to read another spelling.
+DIALECTS: dict[str, Dialect] = {
+    name: _rewriter(rules) for name, rules in _grammar.DIALECT_REWRITES.items()
+}
+
+
+def _dialect(name: str) -> Dialect:
+    normalise = DIALECTS.get(name)
+    if normalise is None:
+        raise ValueError(f"Unknown dialect {name!r}; one of {list(DIALECTS)}")
+    return normalise
+
+
+def is_chord_token(token: str, *, dialect: str = "default") -> bool:
     """True if ``token`` reads as a chord symbol (``G``, ``F#m7b5``, ``E7(#9)``, ``C/G``).
+
+    ``dialect`` names how ``token`` is spelled (a key of :data:`DIALECTS`).
 
     >>> is_chord_token("Bb7(4)(9)"), is_chord_token("A7/sus4"), is_chord_token("Bridge")
     (True, True, False)
+    >>> is_chord_token("Gno3d"), is_chord_token("Gno3d", dialect="chordonomicon")
+    (False, True)
     """
-    return bool(_CHORD_RE.fullmatch(token))
+    return bool(_CHORD_RE.fullmatch(_dialect(dialect)(token)))
 
 
-def parse_chord(symbol: str) -> tuple[int, str] | None:
+def parse_chord(symbol: str, *, dialect: str = "default") -> tuple[int, str] | None:
     """``(root pitch class, quality)``, or None for what is not a chord.
 
     The quality is ``"major"``, ``"minor"``, ``"diminished"``, or ``"open"`` (a
     suspended or power chord, which has no third). A bass note is ignored. What
     the chart parser would not read as a chord (:func:`is_chord_token`) is not one.
+    ``dialect`` names how ``symbol`` is spelled (a key of :data:`DIALECTS`): the
+    default reads chart spellings, ``"chordonomicon"`` and ``"harte"`` those corpora's.
+
+    Results are remembered (up to :data:`PARSE_CACHE_SIZE`), keyed on the symbol and
+    the dialect's function; they are immutable tuples, so sharing them is safe.
 
     >>> parse_chord("F#m7"), parse_chord("Bbmaj7/D"), parse_chord("A7sus4"), parse_chord("Bm7b5")
     ((6, 'minor'), (10, 'major'), (9, 'open'), (11, 'diminished'))
-    >>> parse_chord("C-7"), parse_chord("Bridge")
-    ((0, 'minor'), None)
+    >>> parse_chord("C-7"), parse_chord("Bridge"), parse_chord("Co7"), parse_chord("CΔ7")
+    ((0, 'minor'), None, (0, 'diminished'), (0, 'major'))
+    >>> parse_chord("A/Cs", dialect="chordonomicon"), parse_chord("N", dialect="harte")
+    ((9, 'major'), None)
     """
-    symbol = symbol.strip()
+    return _parse(symbol, _dialect(dialect))
+
+
+@lru_cache(maxsize=PARSE_CACHE_SIZE)
+def _parse(symbol: str, normalise: Dialect) -> tuple[int, str] | None:
+    symbol = normalise(symbol).strip()
     match = _ROOT_RE.fullmatch(symbol)
-    if not (match and is_chord_token(symbol)):
+    if not (match and _CHORD_RE.fullmatch(symbol)):
         return None
     letter, accidental, rest = match.groups()
     root = (_PITCH_CLASSES[letter] + _ACCIDENTALS[accidental]) % 12
@@ -82,13 +137,18 @@ def _note(text: str) -> int | None:
     return (_PITCH_CLASSES[m.group(1)] + _ACCIDENTALS[m.group(2)]) % 12
 
 
-def chord_tones(symbol: str) -> tuple[int, ...] | None:
+def chord_tones(symbol: str, *, dialect: str = "default") -> tuple[int, ...] | None:
     """The chord's pitch classes, bass first (the root, or the bass of a slash chord).
 
     Triads by quality (``m``, ``dim``, ``aug``/``+``, ``sus2``, ``sus4``, ``5``), then
-    sevenths (``7``, ``maj7``, ``dim7``, ``m7b5``), sixths and added ninths. ``None``
-    for what :func:`chordsym.parse_chord` does not read as a chord.
+    sevenths (``7``, ``maj7``/``Δ``, ``dim7``/``o7``, ``m7b5``), sixths and added ninths.
+    ``None`` for what :func:`chordsym.parse_chord` does not read as a chord (in
+    ``dialect``).
+
+    >>> chord_tones("Co7"), chord_tones("CΔ"), chord_tones("A:min7", dialect="harte")
+    ((0, 3, 6, 9), (0, 4, 7, 11), (9, 0, 4, 7))
     """
+    symbol = _dialect(dialect)(symbol)
     parsed = parse_chord(symbol)
     if parsed is None:
         return None

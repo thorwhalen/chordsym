@@ -54,6 +54,25 @@ def test_pattern_is_portable(name):
     re.compile(source)
 
 
+_REWRITES = [
+    (name, i, source)
+    for name, rules in _grammar.DIALECT_REWRITES.items()
+    for i, (source, _) in enumerate(rules)
+]
+
+
+@pytest.mark.parametrize("name, i, source", _REWRITES)
+def test_dialect_rewrite_is_portable(name, i, source):
+    """Dialect rewrites run with the ``g`` and ``u`` flags in JS: portable, never empty."""
+    assert _portability_problems(source, "") == []
+    pattern = re.compile(source)
+    assert all(
+        len(m.group()) > 0
+        for text in ("", "C", "C:maj", "Cs", "Gno3d", "Asus4/Cs")
+        for m in pattern.finditer(text)
+    )
+
+
 @pytest.mark.parametrize(
     "source, flags, bad",
     [

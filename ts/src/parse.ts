@@ -3,7 +3,13 @@
  * TypeScript twin of chordsym/parse.py; both read the same grammar and pass fixtures/cases.json.
  * A pitch class is an integer 0-11 (C = 0, C# = 1, ... B = 11).
  */
-import { ACCIDENTALS, PATTERNS, PITCH_CLASSES, WHITESPACE } from "./grammar.generated.js";
+import {
+  ACCIDENTALS,
+  DIALECT_REWRITES,
+  PATTERNS,
+  PITCH_CLASSES,
+  WHITESPACE,
+} from "./grammar.generated.js";
 
 /** "open" is a suspended or power chord: no third. */
 export type Quality = "major" | "minor" | "diminished" | "open";
@@ -71,16 +77,56 @@ export function pitchClass(letter: string, accidental: string): number {
   return mod(natural + offset, 12);
 }
 
-/** True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`). */
-export function isChordToken(token: string): boolean {
-  return CHORD_RE.test(token);
+/** A dialect: rewrites a chord symbol from its own spelling into the default one. */
+export type Dialect = (symbol: string) => string;
+
+/** How a chord symbol is spelled: a key of `DIALECTS` (default `"default"`). */
+export interface DialectOptions {
+  dialect?: string;
 }
 
-/** `[root pitch class, quality]`, or null for what is not a chord. A bass note is ignored. */
-export function parseChord(symbol: string): [number, Quality] | null {
-  symbol = strip(symbol);
+function rewriter(rules: readonly (readonly [string, string])[]): Dialect {
+  const compiled = rules.map(([src, replacement]) => [new RegExp(src, "gu"), replacement] as const);
+  return (symbol) => {
+    // A function replacement keeps the text literal (no `$1`), as Python's does.
+    for (const [re, replacement] of compiled) symbol = symbol.replace(re, () => replacement);
+    return symbol;
+  };
+}
+
+/**
+ * Dialect name -> its normalisation to the default spelling ("default": identity), built
+ * from the shared DIALECT_REWRITES; set an entry to read another spelling.
+ */
+export const DIALECTS: Map<string, Dialect> = new Map(
+  Object.entries(DIALECT_REWRITES).map(([name, rules]) => [name, rewriter(rules)]),
+);
+
+/** Throws RangeError (Python: ValueError) for a name not in `DIALECTS`. */
+export function dialectOf(options: DialectOptions): Dialect {
+  const name = options.dialect === undefined ? "default" : options.dialect;
+  const normalise = DIALECTS.get(name);
+  if (normalise === undefined) {
+    throw new RangeError(
+      `chordsym: unknown dialect ${JSON.stringify(name)}; one of ${JSON.stringify([...DIALECTS.keys()])}`,
+    );
+  }
+  return normalise;
+}
+
+/** True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`). */
+export function isChordToken(token: string, options: DialectOptions = {}): boolean {
+  return CHORD_RE.test(dialectOf(options)(token));
+}
+
+/**
+ * `[root pitch class, quality]`, or null for what is not a chord. A bass note is ignored.
+ * `options.dialect` names how `symbol` is spelled (a key of `DIALECTS`).
+ */
+export function parseChord(symbol: string, options: DialectOptions = {}): [number, Quality] | null {
+  symbol = strip(dialectOf(options)(symbol));
   const match = ROOT_RE.exec(symbol);
-  if (match === null || !isChordToken(symbol)) return null;
+  if (match === null || !CHORD_RE.test(symbol)) return null;
   const [, letter = "", accidental = "", rest = ""] = match;
   const root = pitchClass(letter, accidental);
   let quality: Quality;
@@ -100,8 +146,12 @@ function note(text: string): number | null {
   return m === null ? null : pitchClass(m[1] ?? "", m[2] ?? "");
 }
 
-/** The chord's pitch classes, bass first (the root, or the bass of a slash chord). */
-export function chordTones(symbol: string): number[] | null {
+/**
+ * The chord's pitch classes, bass first (the root, or the bass of a slash chord).
+ * `options.dialect` names how `symbol` is spelled, as in `parseChord`.
+ */
+export function chordTones(symbol: string, options: DialectOptions = {}): number[] | null {
+  symbol = dialectOf(options)(symbol);
   const parsed = parseChord(symbol);
   if (parsed === null) return null;
   const [root, quality] = parsed;
