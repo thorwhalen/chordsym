@@ -8,24 +8,23 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
 
+from chordsym import _grammar
 from chordsym.keys import Key, estimate_key
-from chordsym.parse import _ACCIDENTALS, _PITCH_CLASSES, parse_chord
+from chordsym.parse import _ACCIDENTALS, _PITCH_CLASSES, _compile, parse_chord
 
-_SHARP_NAMES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-_FLAT_NAMES = ("C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B")
-#: Keys whose signatures use flats (as tonic pitch classes): F Bb Eb Ab Db Gb, d g c f bb eb.
-_FLAT_MAJOR_TONICS = frozenset({5, 10, 3, 8, 1, 6})
-_FLAT_MINOR_TONICS = frozenset({2, 7, 0, 5, 10, 3})
-#: The bass is only a final ``/note`` (``D/F#``); a slash inside the extension (``C6/9``,
-#: ``Bm5-/7``) belongs to the chord's suffix.
-_TRANSPOSABLE_RE = re.compile(
-    r"(?P<lead>[*.(\s]*)(?P<root>[A-G][#b]?)(?P<rest>.*?)"
-    r"(?:/(?P<bass>[A-G][#b]?)(?P<tail>[^/A-Za-z0-9#]*))?",
-    re.DOTALL,
-)
+_SHARP_NAMES = _grammar.SHARP_NAMES
+_FLAT_NAMES = _grammar.FLAT_NAMES
+_FLAT_MAJOR_TONICS = frozenset(_grammar.FLAT_MAJOR_TONICS)
+_FLAT_MINOR_TONICS = frozenset(_grammar.FLAT_MINOR_TONICS)
+#: Groups: lead, root, rest, bass, tail.
+_TRANSPOSABLE_RE = _compile("transposable")
+
+
+def _check_semitones(semitones) -> None:
+    if isinstance(semitones, bool) or not isinstance(semitones, int):
+        raise TypeError(f"semitones must be an int, not {semitones!r}")
 
 
 def _pitch_class(name: str) -> int:
@@ -68,6 +67,7 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
     >>> [transpose_chord(c, 2) for c in ("D7/9", "Bm5-/7", "C6/9", "C(4/9)", "(Em7)", "Am7/G)")]
     ['E7/9', 'C#m5-/7', 'D6/9', 'D(4/9)', '(F#m7)', 'Bm7/A)']
     """
+    _check_semitones(semitones)
     if semitones % 12 == 0 or parse_chord(symbol) is None:
         return symbol
     match = _TRANSPOSABLE_RE.fullmatch(symbol)
@@ -78,10 +78,10 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
     def moved(name: str) -> str:
         return names[(_pitch_class(name) + semitones) % 12]
 
-    parts = match.groupdict()
-    out = parts["lead"] + moved(parts["root"]) + parts["rest"]
-    if parts["bass"]:
-        out += "/" + moved(parts["bass"]) + (parts["tail"] or "")
+    lead, root, rest, bass, tail = match.groups()
+    out = lead + moved(root) + rest
+    if bass:
+        out += "/" + moved(bass) + (tail or "")
     return out
 
 
@@ -98,6 +98,7 @@ def transposition_table(
     >>> transposition_table(["G", "D", "Em", "C", "G"], 3)
     {'semitones': 3, 'key': 'Bb', 'chords': {'G': 'Bb', 'D': 'F', 'Em': 'Gm', 'C': 'Eb'}}
     """
+    _check_semitones(semitones)
     symbols = list(symbols)
     key = key or estimate_key(symbols)
     target = Key((key.tonic + semitones) % 12, key.minor) if key else None

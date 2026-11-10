@@ -1,0 +1,132 @@
+"""Compare the Python and TypeScript twins on a large generated corpus (run by hand, before a release).
+
+The golden cases in ``fixtures/cases.json`` are the standing guard in CI; this script is the
+wide net behind them: it generates tens of thousands of chord spellings (every root ×
+quality × extension × bass, plus seeded random strings), computes every public function on
+them in Python, runs the same inputs through the built TypeScript package with Node, and
+reports any difference.
+
+    (cd ts && npm run build) && python scripts/twin_differential.py
+
+Requires Node >= 20 and a built ``ts/dist``. Exits 1 on any mismatch.
+"""
+
+from __future__ import annotations
+
+import itertools
+import json
+import random
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+import chordsym  # noqa: E402
+
+ROOTS = [letter + acc for letter in "ABCDEFG" for acc in ("", "#", "b")]
+QUALITIES = [
+    "",
+    "m",
+    "M",
+    "maj",
+    "min",
+    "dim",
+    "aug",
+    "sus",
+    "add",
+    "+",
+    "°",
+    "º",
+    "ø",
+    "-",
+    "5",
+]
+EXTENSIONS = ["", "7", "9", "11", "13", "6", "7M", "7+", "5-", "b5", "#9", "sus2", "sus4", "add9",
+              "6/9", "7/9", "4/7", "7(#9)", "(4/9)", "7(4)(9)", "m7b5", "maj7", "dim7", "/sus4",
+              "(b5)", "69", "add2", "no3", "Δ7"]  # fmt: skip
+BASSES = ["", "/E", "/G", "/F#", "/Bb", "/C", "/9", "/b13"]
+LEADS = ["", "*", "...", "(", " ", "\xa0", "　", "\x1c"]
+TRAILS = ["", ")", "*", " ", "\xa0", ")*"]
+SHIFTS = (-13, -1, 1, 5, 11)
+
+_NODE = r"""
+import { readFileSync } from "node:fs";
+const [dist, inputPath] = process.argv.slice(1);
+const c = await import(dist);
+const { tokens, songs } = JSON.parse(readFileSync(inputPath, "utf-8"));
+const out = { tokens: tokens.map((t) => [c.isChordToken(t), c.parseChord(t), c.chordTones(t),
+  [-13, -1, 1, 5, 11].flatMap((k) => [false, true].map((flats) => c.transposeChord(t, k, { flats })))]),
+  songs: songs.map((s) => [c.estimateKey(s), ...[3, -4].map((k) => {
+    const r = c.transpositionTable(s, k); return { ...r, chords: [...r.chords] }; })]) };
+process.stdout.write(JSON.stringify(out));
+"""
+
+
+def corpus(n_random: int = 3000, seed: int = 0) -> list[str]:
+    """Every combination of the spelling parts above, plus seeded random strings."""
+    rng = random.Random(seed)
+    out = [
+        r + q + e + b
+        for r, q, e, b in itertools.product(ROOTS, QUALITIES, EXTENSIONS, BASSES)
+    ]
+    alphabet = "ABCDEFGmMajdinsuog#b+-°ø0123456789/()*. \xa0"
+    for _ in range(n_random):
+        body = "".join(rng.choice(alphabet) for _ in range(rng.randint(0, 6)))
+        out.append(rng.choice(LEADS) + rng.choice(ROOTS) + body + rng.choice(TRAILS))
+    return list(dict.fromkeys(out))
+
+
+def python_outputs(tokens, songs):
+    """What the Python twin returns, in the JSON form the Node side produces."""
+
+    def j(x):
+        return json.loads(json.dumps(x))
+
+    def table(s, k):
+        r = chordsym.transposition_table(s, k)
+        return {**r, "chords": [list(kv) for kv in r["chords"].items()]}
+
+    def key(k):
+        return None if k is None else {"tonic": k.tonic, "minor": k.minor}
+
+    return {
+        "tokens": [
+            [chordsym.is_chord_token(t), j(chordsym.parse_chord(t)), j(chordsym.chord_tones(t)),
+             [chordsym.transpose_chord(t, k, flats=f) for k in SHIFTS for f in (False, True)]]
+            for t in tokens
+        ],
+        "songs": [[key(chordsym.estimate_key(s)), table(s, 3), table(s, -4)] for s in songs],
+    }  # fmt: skip
+
+
+def main() -> int:
+    tokens = corpus()
+    rng = random.Random(7)
+    songs = [
+        [rng.choice(tokens) for _ in range(rng.randint(0, 12))] for _ in range(3000)
+    ]
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        json.dump({"tokens": tokens, "songs": songs}, f, ensure_ascii=False)
+    dist = (ROOT / "ts" / "dist" / "index.js").as_uri()
+    node = subprocess.run(
+        ["node", "--input-type=module", "-e", _NODE, dist, f.name],
+        capture_output=True, text=True, check=True,
+    )  # fmt: skip
+    ts, py = json.loads(node.stdout), python_outputs(tokens, songs)
+    bad = [
+        (kind, inputs[i])
+        for kind, inputs in (("tokens", tokens), ("songs", songs))
+        for i, (a, b) in enumerate(zip(ts[kind], py[kind]))
+        if json.dumps(a) != json.dumps(b)
+    ]
+    print(f"{len(tokens)} tokens, {len(songs)} songs: {len(bad)} mismatches")
+    for kind, item in bad[:10]:
+        print(" ", kind, repr(item))
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

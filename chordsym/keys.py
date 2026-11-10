@@ -14,28 +14,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from chordsym import _grammar
 from chordsym.parse import parse_chord
 
-# Qualities each scale degree (semitones above the tonic) takes in a key.
-_MAJOR_KEY = {
-    0: {"major"},
-    2: {"minor"},
-    4: {"minor"},
-    5: {"major"},
-    7: {"major"},
-    9: {"minor"},
-    11: {"diminished", "minor"},
-}
-_MINOR_KEY = {
-    0: {"minor"},
-    2: {"diminished", "minor"},
-    3: {"major"},
-    5: {"minor"},
-    7: {"minor", "major"},  # the harmonic-minor V is at home in a minor key
-    8: {"major"},
-    10: {"major"},
-}
-_TONIC_WEIGHT, _DIATONIC_WEIGHT, _ENDS_WEIGHT = 2.0, 1.0, 2.0
+_MAJOR_KEY = {degree: set(qs) for degree, qs in _grammar.MAJOR_KEY.items()}
+_MINOR_KEY = {degree: set(qs) for degree, qs in _grammar.MINOR_KEY.items()}
+_WEIGHTS = _grammar.KEY_WEIGHTS
 
 
 @dataclass(frozen=True)
@@ -44,6 +28,12 @@ class Key:
 
     tonic: int
     minor: bool = False
+
+    def __post_init__(self):
+        if isinstance(self.tonic, bool) or not isinstance(self.tonic, int):
+            raise TypeError(f"Key tonic must be an int pitch class, not {self.tonic!r}")
+        if not 0 <= self.tonic < 12:
+            raise ValueError(f"Key tonic must be 0-11 (C = 0), not {self.tonic}")
 
 
 def _function(parsed: tuple[int, str], key: Key) -> str:
@@ -71,15 +61,18 @@ def estimate_key(symbols: Iterable[str]) -> Key | None:
     chords = [parsed for parsed in map(parse_chord, symbols) if parsed]
     if not chords:
         return None
-    weights = {"tonic": _TONIC_WEIGHT, "diatonic": _DIATONIC_WEIGHT, "outside": 0.0}
     best, best_score = None, float("-inf")
     for tonic in range(12):
         for minor in (False, True):
             key = Key(tonic, minor)
-            score = sum(weights[_function(parsed, key)] for parsed in chords)
-            score += _ENDS_WEIGHT * sum(
-                _function(parsed, key) == "tonic" for parsed in (chords[0], chords[-1])
-            )
+            # A plain left-to-right sum, as the TypeScript twin does: the builtin sum()
+            # compensates float rounding (Python 3.12+), which would break ties differently.
+            score = 0.0
+            for parsed in chords:
+                score += _WEIGHTS[_function(parsed, key)]
+            for parsed in (chords[0], chords[-1]):
+                if _function(parsed, key) == "tonic":
+                    score += _WEIGHTS["ends"]
             if score > best_score:
                 best, best_score = key, score
     return best
