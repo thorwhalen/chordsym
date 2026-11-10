@@ -8,24 +8,18 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
 
+from chordsym import _grammar
 from chordsym.keys import Key, estimate_key
-from chordsym.parse import _ACCIDENTALS, _PITCH_CLASSES, parse_chord
+from chordsym.parse import _ACCIDENTALS, _PITCH_CLASSES, _compile, parse_chord
 
-_SHARP_NAMES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-_FLAT_NAMES = ("C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B")
-#: Keys whose signatures use flats (as tonic pitch classes): F Bb Eb Ab Db Gb, d g c f bb eb.
-_FLAT_MAJOR_TONICS = frozenset({5, 10, 3, 8, 1, 6})
-_FLAT_MINOR_TONICS = frozenset({2, 7, 0, 5, 10, 3})
-#: The bass is only a final ``/note`` (``D/F#``); a slash inside the extension (``C6/9``,
-#: ``Bm5-/7``) belongs to the chord's suffix.
-_TRANSPOSABLE_RE = re.compile(
-    r"(?P<lead>[*.(\s]*)(?P<root>[A-G][#b]?)(?P<rest>.*?)"
-    r"(?:/(?P<bass>[A-G][#b]?)(?P<tail>[^/A-Za-z0-9#]*))?",
-    re.DOTALL,
-)
+_SHARP_NAMES = _grammar.SHARP_NAMES
+_FLAT_NAMES = _grammar.FLAT_NAMES
+_FLAT_MAJOR_TONICS = frozenset(_grammar.FLAT_MAJOR_TONICS)
+_FLAT_MINOR_TONICS = frozenset(_grammar.FLAT_MINOR_TONICS)
+#: Groups: lead, root, rest, bass, tail.
+_TRANSPOSABLE_RE = _compile("transposable")
 
 
 def _pitch_class(name: str) -> int:
@@ -78,10 +72,10 @@ def transpose_chord(symbol: str, semitones: int, *, flats: bool = False) -> str:
     def moved(name: str) -> str:
         return names[(_pitch_class(name) + semitones) % 12]
 
-    parts = match.groupdict()
-    out = parts["lead"] + moved(parts["root"]) + parts["rest"]
-    if parts["bass"]:
-        out += "/" + moved(parts["bass"]) + (parts["tail"] or "")
+    lead, root, rest, bass, tail = match.groups()
+    out = lead + moved(root) + rest
+    if bass:
+        out += "/" + moved(bass) + (tail or "")
     return out
 
 

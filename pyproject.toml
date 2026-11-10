@@ -29,6 +29,10 @@ dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1.0"]
 [tool.hatch.build.targets.wheel]
 packages = ["chordsym"]
 
+[tool.hatch.build.targets.sdist]
+# The TypeScript twin ships to npm, not in the Python sdist; the fixtures do (tests read them).
+exclude = ["ts/"]
+
 [tool.ruff.lint]
 select = ["D100"]
 

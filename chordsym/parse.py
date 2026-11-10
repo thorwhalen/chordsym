@@ -14,25 +14,25 @@ from __future__ import annotations
 
 import re
 
-_CHORD_RE = re.compile(
-    r"[*.]{0,3}\(?"  # leading marks: *D, ...Dm6
-    r"[A-G][#b]?"  # root
-    r"(?:maj|min|dim|aug|sus|add|m|M|\+|°|º|ø)?"  # quality
-    r"\d{0,2}[M+\-]?"  # extension: 7, 9, 13; Brazilian 7M, 7+, 5-
-    r"(?:sus\d{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)\d{1,2}[+\-]?)*"  # b5, sus, add9
-    r"(?:/(?:[#b]?\d{1,2}[+\-#b]?|sus\d{0,2}))*"  # stacked: 7/9, 4/7, 5-/7, /b13, 7/9b, 7/sus4
-    r"(?:\([^()\s]{1,10}\))*"  # parenthesised alterations: (#9), (4/9), (b5), 7(4)(9)
-    r"(?:/[A-G][#b]?)?"  # bass
-    r"\)?\*?"
-)
+from chordsym import _grammar
 
-_ROOT_RE = re.compile(r"[*.(\s]*([A-G])([#b]?)(.*)", re.DOTALL)
-_PITCH_CLASSES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
-_ACCIDENTALS = {"#": 1, "b": -1, "": 0}
-_DIMINISHED_RE = re.compile(r"(?:dim|°|º|ø|m(?:in)?7?\(?b5)")
-_POWER_RE = re.compile(r"5(?!\d)")
 
-_NOTE_RE = re.compile(r"([A-G])([#b]?)")
+def _compile(name: str) -> re.Pattern:
+    source, flags = _grammar.PATTERNS[name]
+    return re.compile(source, re.DOTALL if "s" in flags else 0)
+
+
+_CHORD_RE = _compile("chord")
+_ROOT_RE = _compile("root")
+_DIMINISHED_RE = _compile("diminished")
+_POWER_RE = _compile("power")
+_NOTE_RE = _compile("note")
+_MAJOR_SEVENTH_RE = _compile("major_seventh")
+_SEVENTH_RE = _compile("seventh")
+_SIXTH_RE = _compile("sixth")
+_NINTH_RE = _compile("ninth")
+_PITCH_CLASSES = _grammar.PITCH_CLASSES
+_ACCIDENTALS = _grammar.ACCIDENTALS
 
 
 def is_chord_token(token: str) -> bool:
@@ -75,7 +75,6 @@ def parse_chord(symbol: str) -> tuple[int, str] | None:
     return root, quality
 
 
-
 def _note(text: str) -> int | None:
     m = _NOTE_RE.match(text.strip())
     if not m:
@@ -103,17 +102,17 @@ def chord_tones(symbol: str) -> tuple[int, ...] | None:
     intervals = [0, third, fifth]
     if quality == "open":  # suspended or power: no third
         intervals = (
-            [0, 7] if re.match(r"5(?!\d)", rest) else [0, 2 if "sus2" in rest else 5, 7]
+            [0, 7] if _POWER_RE.match(rest) else [0, 2 if "sus2" in rest else 5, 7]
         )
     if "dim7" in rest or rest in ("°7", "o7"):
         intervals.append(9)
-    elif re.search(r"(maj|M|Δ)(7|9|11|13)", rest):
+    elif _MAJOR_SEVENTH_RE.search(rest):
         intervals.append(11)
-    elif re.search(r"(?<!add)(7|9|11|13)", rest):
+    elif _SEVENTH_RE.search(rest):
         intervals.append(10)
-    if re.search(r"(?<!\d)6", rest):
+    if _SIXTH_RE.search(rest):
         intervals.append(9)
-    if re.search(r"9|add2", rest) and 2 not in intervals:
+    if _NINTH_RE.search(rest) and 2 not in intervals:
         intervals.append(2)
     tones = list(dict.fromkeys((root + i) % 12 for i in intervals))
     bass = _note(bass_text) if bass_text else None

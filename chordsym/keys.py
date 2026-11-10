@@ -14,28 +14,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from chordsym import _grammar
 from chordsym.parse import parse_chord
 
-# Qualities each scale degree (semitones above the tonic) takes in a key.
-_MAJOR_KEY = {
-    0: {"major"},
-    2: {"minor"},
-    4: {"minor"},
-    5: {"major"},
-    7: {"major"},
-    9: {"minor"},
-    11: {"diminished", "minor"},
-}
-_MINOR_KEY = {
-    0: {"minor"},
-    2: {"diminished", "minor"},
-    3: {"major"},
-    5: {"minor"},
-    7: {"minor", "major"},  # the harmonic-minor V is at home in a minor key
-    8: {"major"},
-    10: {"major"},
-}
-_TONIC_WEIGHT, _DIATONIC_WEIGHT, _ENDS_WEIGHT = 2.0, 1.0, 2.0
+_MAJOR_KEY = {degree: set(qs) for degree, qs in _grammar.MAJOR_KEY.items()}
+_MINOR_KEY = {degree: set(qs) for degree, qs in _grammar.MINOR_KEY.items()}
+_WEIGHTS = _grammar.KEY_WEIGHTS
 
 
 @dataclass(frozen=True)
@@ -71,13 +55,12 @@ def estimate_key(symbols: Iterable[str]) -> Key | None:
     chords = [parsed for parsed in map(parse_chord, symbols) if parsed]
     if not chords:
         return None
-    weights = {"tonic": _TONIC_WEIGHT, "diatonic": _DIATONIC_WEIGHT, "outside": 0.0}
     best, best_score = None, float("-inf")
     for tonic in range(12):
         for minor in (False, True):
             key = Key(tonic, minor)
-            score = sum(weights[_function(parsed, key)] for parsed in chords)
-            score += _ENDS_WEIGHT * sum(
+            score = sum(_WEIGHTS[_function(parsed, key)] for parsed in chords)
+            score += _WEIGHTS["ends"] * sum(
                 _function(parsed, key) == "tonic" for parsed in (chords[0], chords[-1])
             )
             if score > best_score:

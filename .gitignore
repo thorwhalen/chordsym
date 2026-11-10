@@ -124,3 +124,6 @@ dist/
 .venv/
 .pytest_cache/
 .ruff_cache/
+
+# Node / the TypeScript twin (ts/)
+node_modules/

@@ -26,7 +26,14 @@
 # action uses peaceiris/actions-gh-pages (branch-based) + REST API,
 # not the OIDC `actions/deploy-pages` flow.
 name: Continuous Integration
-on: [push, pull_request]
+# The TypeScript twin (ts/) has its own workflow (npm-ci-ts.yml); a change only there
+# does not re-run or re-release the Python package. The generated grammar file is the
+# exception: tests/test_grammar.py checks it against chordsym/_grammar.py.
+on:
+  push:
+    paths: ["**", "!ts/**", "ts/src/grammar.generated.ts", "!.github/workflows/npm-ci-ts.yml"]
+  pull_request:
+    paths: ["**", "!ts/**", "ts/src/grammar.generated.ts", "!.github/workflows/npm-ci-ts.yml"]
 jobs:
   ci:
     uses: i2mint/wads/.github/workflows/uv-ci.yml@master
