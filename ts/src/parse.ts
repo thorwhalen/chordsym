@@ -44,6 +44,9 @@ const MAJOR_SEVENTH_RE = anywhere("major_seventh");
 const SEVENTH_RE = anywhere("seventh");
 const SIXTH_RE = anywhere("sixth");
 const NINTH_RE = anywhere("ninth");
+const ALTERED_PATTERN = new RegExp(PATTERNS.altered[0], "gu");
+/** Semitones above the root of each altered extension. */
+const ALTERED_SEMITONES: Record<string, number> = { b9: 1, "#9": 3, "#11": 6, b13: 8 };
 const SPACES: ReadonlySet<number> = new Set(WHITESPACE);
 
 /**
@@ -117,7 +120,7 @@ export function chordTones(symbol: string, options: DialectOptions = {}): number
   const slash = stripped.indexOf("/");
   const head = slash < 0 ? stripped : stripped.slice(0, slash);
   const bassText = slash < 0 ? "" : stripped.slice(slash + 1);
-  const rest = head.replace(NOTE_RE, "");
+  let rest = head.replace(NOTE_RE, "");
   const third = quality === "minor" || quality === "diminished" ? 3 : 4;
   let fifth = quality === "diminished" ? 6 : 7;
   if (rest.includes("aug") || rest.startsWith("+")) fifth = 8;
@@ -125,11 +128,16 @@ export function chordTones(symbol: string, options: DialectOptions = {}): number
   if (quality === "open") {
     intervals = matchesAtStart(POWER_RE, rest) ? [0, 7] : [0, rest.includes("sus2") ? 2 : 5, 7];
   }
+  // Altered extensions are their own tone: not the natural 9/11/13 they contain, and an
+  // added one implies no seventh.
+  const altered = [...rest.matchAll(ALTERED_PATTERN)].map((m) => ALTERED_SEMITONES[`${m[1]}${m[2]}`]);
+  rest = rest.replace(ALTERED_PATTERN, "");
   if (rest.includes("dim7") || rest === "°7" || rest === "o7") intervals.push(9);
   else if (MAJOR_SEVENTH_RE.test(rest)) intervals.push(11);
   else if (SEVENTH_RE.test(rest)) intervals.push(10);
   if (SIXTH_RE.test(rest)) intervals.push(9);
   if (NINTH_RE.test(rest) && !intervals.includes(2)) intervals.push(2);
+  intervals.push(...altered.filter((i) => i !== undefined));
   let tones = [...new Set(intervals.map((i) => mod(root + i, 12)))];
   const bass = bassText ? note(bassText) : null;
   if (bass !== null) tones = [bass, ...tones.filter((t) => t !== bass)];
