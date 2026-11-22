@@ -36,6 +36,9 @@ _MAJOR_SEVENTH_RE = _grammar.compile_pattern("major_seventh")
 _SEVENTH_RE = _grammar.compile_pattern("seventh")
 _SIXTH_RE = _grammar.compile_pattern("sixth")
 _NINTH_RE = _grammar.compile_pattern("ninth")
+_ALTERED_RE = _grammar.compile_pattern("altered")
+#: Semitones above the root of each altered extension.
+_ALTERED_SEMITONES = {("b", "9"): 1, ("#", "9"): 3, ("#", "11"): 6, ("b", "13"): 8}
 _PITCH_CLASSES = _grammar.PITCH_CLASSES
 _ACCIDENTALS = _grammar.ACCIDENTALS
 
@@ -141,6 +144,10 @@ def chord_tones(
         intervals = (
             [0, 7] if _POWER_RE.match(rest) else [0, 2 if "sus2" in rest else 5, 7]
         )
+    # Altered extensions (b9, #9, #11, b13) are their own tone and must not be read as the
+    # natural 9/11/13 they contain (nor, when added, imply a seventh).
+    altered = [_ALTERED_SEMITONES.get(m.groups()) for m in _ALTERED_RE.finditer(rest)]
+    rest = _ALTERED_RE.sub("", rest)
     if "dim7" in rest or rest in ("°7", "o7"):
         intervals.append(9)
     elif _MAJOR_SEVENTH_RE.search(rest):
@@ -151,6 +158,7 @@ def chord_tones(
         intervals.append(9)
     if _NINTH_RE.search(rest) and 2 not in intervals:
         intervals.append(2)
+    intervals.extend(i for i in altered if i is not None)
     tones = list(dict.fromkeys((root + i) % 12 for i in intervals))
     bass = _note(bass_text) if bass_text else None
     if bass is not None:

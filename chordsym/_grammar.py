@@ -19,7 +19,7 @@ Every pattern here must mean the same thing in Python's ``re`` and in a JavaScri
 by running the same cases on both sides.
 
 >>> sorted(PATTERNS)[:3]
-['chord', 'diminished', 'harte']
+['altered', 'chord', 'diminished']
 """
 
 import re
@@ -62,6 +62,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
     "seventh": (r"(?<!add)(7|9|11|13)", ""),
     "sixth": (r"(?<![0-9])6", ""),
     "ninth": (r"9|add2", ""),
+    # An altered extension (b9, #9, #11, b13), with an ``add`` before it when added.
+    "altered": (r"(?:add)?([b#])(9|11|13)", ""),
     # Root, suffix, and a final /bass with what trails it (used with a whole-string match).
     # The bass is only a final ``/note`` (``D/F#``); a slash inside the extension
     # (``C6/9``, ``Bm5-/7``) belongs to the chord's suffix.
