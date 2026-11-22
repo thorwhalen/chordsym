@@ -1,4 +1,4 @@
-> built 2026-11-10 10:40 UTC from 8876d3b (main) · chordsym 0.0.4. Details: build_info.json
+> built 2026-11-22 11:35 UTC from d02e1ef (main) · chordsym 0.0.5. Details: build_info.json
 
 # index.html.md
 
@@ -626,7 +626,7 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-11-10 10:40 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/8876d3bd7c08b11a4e26ab83a12587fb61b249fc"><code>8876d3b</code></a> on branch <code>main</code>, for **chordsym 0.0.4** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-22 11:35 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/d02e1efde8a53eb6f804fc97b9654e4e6878f321"><code>d02e1ef</code></a> on branch <code>main</code>, for **chordsym 0.0.5** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -635,7 +635,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/8876d3bd7c08b11a4e26ab83a12587fb61b249fc"><code>8876d3bd7c08b11a4e26ab83a12587fb61b249fc</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/d02e1efde8a53eb6f804fc97b9654e4e6878f321"><code>d02e1efde8a53eb6f804fc97b9654e4e6878f321</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -646,15 +646,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/42800997986">42800997986</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/45017950335">45017950335</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>8876d3bd7c08b11a4e26ab83a12587fb61b249fc</code> (in the history of the built commit) |
+| Event commit | <code>d02e1efde8a53eb6f804fc97b9654e4e6878f321</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.22  |
+| epythet  | 0.2.23  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.16 |
@@ -673,14 +673,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/chordsym/0.0.4/">0.0.4</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.5/">0.0.5</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout 8876d3bd7c08b11a4e26ab83a12587fb61b249fc
-pip install "epythet==0.2.22"
+git checkout d02e1efde8a53eb6f804fc97b9654e4e6878f321
+pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 
