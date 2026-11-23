@@ -127,6 +127,7 @@ data-aria-dark="Switch to auto color mode">
 </span></pre></div>
 </div>
 <p>It reads the spellings found in scraped chord charts (<code class="docutils literal notranslate"><span class="pre">C6/9</span></code>, <code class="docutils literal notranslate"><span class="pre">Bm5-/7</span></code>, Brazilian <code class="docutils literal notranslate"><span class="pre">7M</span></code>, <code class="docutils literal notranslate"><span class="pre">E7(#9)</span></code>, <code class="docutils literal notranslate"><span class="pre">D/F#</span></code>, <code class="docutils literal notranslate"><span class="pre">Co7</span></code>, <code class="docutils literal notranslate"><span class="pre">CΔ7</span></code>, <code class="docutils literal notranslate"><span class="pre">C∆</span></code>, <code class="docutils literal notranslate"><span class="pre">CmΔ7</span></code>), not only textbook ones. Pitch classes are ints 0-11 (C = 0).</p>
+<p><code class="docutils literal notranslate"><span class="pre">chord_tones(s)</span></code> puts the bass first; <code class="docutils literal notranslate"><span class="pre">chord_tones(s,</span> <span class="pre">bass_first=False)</span></code> keeps the chord’s own root-position order and <code class="docutils literal notranslate"><span class="pre">slash_bass(s)</span></code> reads the bass separately (<code class="docutils literal notranslate"><span class="pre">None</span></code> without one). <code class="docutils literal notranslate"><span class="pre">6/9</span></code> and <code class="docutils literal notranslate"><span class="pre">69</span></code> are the six-nine chord (<code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">4,</span> <span class="pre">7,</span> <span class="pre">9,</span> <span class="pre">2)</span></code> for C), not a slash chord.</p>
 <p>Other spellings are read through a <code class="docutils literal notranslate"><span class="pre">dialect=</span></code> keyword (on <code class="docutils literal notranslate"><span class="pre">parse_chord</span></code>, <code class="docutils literal notranslate"><span class="pre">chord_tones</span></code>, <code class="docutils literal notranslate"><span class="pre">is_chord_token</span></code>, <code class="docutils literal notranslate"><span class="pre">chord_function</span></code>, <code class="docutils literal notranslate"><span class="pre">estimate_key</span></code>, and <code class="docutils literal notranslate"><span class="pre">transposition_table</span></code> for its key estimate), which rewrites a symbol into the default spelling first. A dialect is a name in <code class="docutils literal notranslate"><span class="pre">chordsym.DIALECTS</span></code> or any pure function <code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code> (results are cached per function); <code class="docutils literal notranslate"><span class="pre">chordsym.dialects.register_dialect(name,</span> <span class="pre">func)</span></code> adds a name. <code class="docutils literal notranslate"><span class="pre">transpose_chord</span></code> takes no dialect, since its output keeps the input’s spelling: it moves default spellings only.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">&quot;default&quot;</span></code>: the chart spellings above.</p></li>
@@ -176,7 +177,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-22 11:35 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/d02e1efde8a53eb6f804fc97b9654e4e6878f321">d02e1ef</a> (main) · chordsym 0.0.5 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-23 02:55 UTC from <a href="https://github.com/thorwhalen/chordsym/commit/4c98f139f4c3592d041b1d3bd4615f6146c3f0f3">4c98f13</a> (main) · chordsym 0.0.6 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -211,7 +212,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=282f96c0"></script>
+      <script src="_static/documentation_options.js?v=1fd71caa"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

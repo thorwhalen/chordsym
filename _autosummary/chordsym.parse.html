@@ -90,6 +90,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#chordsym.parse.chord_tones"><code class="docutils literal notranslate"><span class="pre">chord_tones()</span></code></a></li>
 <li><a class="reference internal" href="#chordsym.parse.is_chord_token"><code class="docutils literal notranslate"><span class="pre">is_chord_token()</span></code></a></li>
 <li><a class="reference internal" href="#chordsym.parse.parse_chord"><code class="docutils literal notranslate"><span class="pre">parse_chord()</span></code></a></li>
+<li><a class="reference internal" href="#chordsym.parse.slash_bass"><code class="docutils literal notranslate"><span class="pre">slash_bass()</span></code></a></li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
@@ -159,7 +160,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#chordsym.parse.chord_tones" title="chordsym.parse.chord_tones"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chord_tones</span></code></a>(symbol, *[, dialect])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#chordsym.parse.chord_tones" title="chordsym.parse.chord_tones"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chord_tones</span></code></a>(symbol, *[, dialect, bass_first])</p></td>
 <td><p>The chord's pitch classes, bass first (the root, or the bass of a slash chord).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#chordsym.parse.is_chord_token" title="chordsym.parse.is_chord_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_chord_token</span></code></a>(token, *[, dialect])</p></td>
@@ -167,6 +168,9 @@ data-aria-dark="Switch to auto color mode">
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#chordsym.parse.parse_chord" title="chordsym.parse.parse_chord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_chord</span></code></a>(symbol, *[, dialect])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(root</span> <span class="pre">pitch</span> <span class="pre">class,</span> <span class="pre">quality)</span></code>, or None for what is not a chord.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#chordsym.parse.slash_bass" title="chordsym.parse.slash_bass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slash_bass</span></code></a>(symbol, *[, dialect])</p></td>
+<td><p>The bass pitch class of a slash chord, or None (not a chord, or no bass).</p></td>
 </tr>
 </tbody>
 </table>
@@ -179,8 +183,10 @@ data-aria-dark="Switch to auto color mode">
 
 <dl class="py function">
 <dt class="sig sig-object py" id="chordsym.parse.chord_tones">
-<span class="sig-prename descclassname"><span class="pre">chordsym.parse.</span></span><span class="sig-name descname"><span class="pre">chord_tones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dialect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/parse.html#chord_tones"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.parse.chord_tones" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">chordsym.parse.</span></span><span class="sig-name descname"><span class="pre">chord_tones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dialect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bass_first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/parse.html#chord_tones"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.parse.chord_tones" title="Link to this definition">#</a></dt>
 <dd><p>The chord’s pitch classes, bass first (the root, or the bass of a slash chord).</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">bass_first=False</span></code> the tones keep the chord’s own root-position order and the
+bass is not moved (read it with <a class="reference internal" href="#chordsym.parse.slash_bass" title="chordsym.parse.slash_bass"><code class="xref py py-func docutils literal notranslate"><span class="pre">slash_bass()</span></code></a>).</p>
 <p>Triads by quality (<code class="docutils literal notranslate"><span class="pre">m</span></code>, <code class="docutils literal notranslate"><span class="pre">dim</span></code>, <code class="docutils literal notranslate"><span class="pre">aug</span></code>/<code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">sus2</span></code>, <code class="docutils literal notranslate"><span class="pre">sus4</span></code>, <code class="docutils literal notranslate"><span class="pre">5</span></code>), then
 sevenths (<code class="docutils literal notranslate"><span class="pre">7</span></code>, <code class="docutils literal notranslate"><span class="pre">maj7</span></code>/<code class="docutils literal notranslate"><span class="pre">Δ</span></code>/<code class="docutils literal notranslate"><span class="pre">∆</span></code>, <code class="docutils literal notranslate"><span class="pre">dim7</span></code>/<code class="docutils literal notranslate"><span class="pre">o7</span></code>, <code class="docutils literal notranslate"><span class="pre">m7b5</span></code>), sixths and added ninths.
 <code class="docutils literal notranslate"><span class="pre">None</span></code> for what <a class="reference internal" href="chordsym.html#chordsym.parse_chord" title="chordsym.parse_chord"><code class="xref py py-func docutils literal notranslate"><span class="pre">chordsym.parse_chord()</span></code></a> does not read as a chord (in
@@ -189,6 +195,10 @@ sevenths (<code class="docutils literal notranslate"><span class="pre">7</span><
 </span><span data-line="2"><span class="go">((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))</span>
 </span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">chord_tones</span><span class="p">(</span><span class="s2">"A:min7"</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">"harte"</span><span class="p">),</span> <span class="n">chord_tones</span><span class="p">(</span><span class="s2">"C:maj/3"</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">"harte"</span><span class="p">)</span>
 </span><span data-line="4"><span class="go">((9, 0, 4, 7), (4, 0, 7))</span>
+</span><span data-line="5"><span class="gp">&gt;&gt;&gt; </span><span class="n">chord_tones</span><span class="p">(</span><span class="s2">"C6/9"</span><span class="p">),</span> <span class="n">chord_tones</span><span class="p">(</span><span class="s2">"C69"</span><span class="p">)</span>
+</span><span data-line="6"><span class="go">((0, 4, 7, 9, 2), (0, 4, 7, 9, 2))</span>
+</span><span data-line="7"><span class="gp">&gt;&gt;&gt; </span><span class="n">chord_tones</span><span class="p">(</span><span class="s2">"C/G"</span><span class="p">),</span> <span class="n">chord_tones</span><span class="p">(</span><span class="s2">"C/G"</span><span class="p">,</span> <span class="n">bass_first</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="8"><span class="go">((7, 0, 4), (0, 4, 7))</span>
 </span></pre></div>
 </div>
 <dl class="field-list simple">
@@ -247,6 +257,23 @@ sharing them is safe.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="chordsym.parse.slash_bass">
+<span class="sig-prename descclassname"><span class="pre">chordsym.parse.</span></span><span class="sig-name descname"><span class="pre">slash_bass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dialect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chordsym/parse.html#slash_bass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#chordsym.parse.slash_bass" title="Link to this definition">#</a></dt>
+<dd><p>The bass pitch class of a slash chord, or None (not a chord, or no bass).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">slash_bass</span><span class="p">(</span><span class="s2">"C/G"</span><span class="p">),</span> <span class="n">slash_bass</span><span class="p">(</span><span class="s2">"C"</span><span class="p">),</span> <span class="n">slash_bass</span><span class="p">(</span><span class="s2">"C6/9"</span><span class="p">),</span> <span class="n">slash_bass</span><span class="p">(</span><span class="s2">"C6/9/E"</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">(7, None, None, 4)</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">slash_bass</span><span class="p">(</span><span class="s2">"A:min7/b3"</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">"harte"</span><span class="p">)</span>
+</span><span data-line="4"><span class="go">0</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
         </article><button class="back-to-top" type="button">
@@ -289,7 +316,7 @@ sharing them is safe.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=282f96c0"></script>
+      <script src="../_static/documentation_options.js?v=1fd71caa"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

@@ -17,4 +17,5 @@ chordsym.parse
       chord_tones
       is_chord_token
       parse_chord
+      slash_bass
    

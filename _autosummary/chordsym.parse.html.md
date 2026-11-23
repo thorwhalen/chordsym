@@ -27,18 +27,22 @@ Other spellings are read through a `dialect` (see [`chordsym.dialects`](chordsym
 
 ### Functions
 
-| [`chord_tones`](#chordsym.parse.chord_tones)(symbol, \*[, dialect])   | The chord's pitch classes, bass first (the root, or the bass of a slash chord).   |
-|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`is_chord_token`](#chordsym.parse.is_chord_token)(token, \*[, dialect]) | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).         |
-| [`parse_chord`](#chordsym.parse.parse_chord)(symbol, \*[, dialect])   | `(root pitch class, quality)`, or None for what is not a chord.                   |
+| [`chord_tones`](#chordsym.parse.chord_tones)(symbol, \*[, dialect, bass_first])   | The chord's pitch classes, bass first (the root, or the bass of a slash chord).   |
+|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`is_chord_token`](#chordsym.parse.is_chord_token)(token, \*[, dialect])             | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).         |
+| [`parse_chord`](#chordsym.parse.parse_chord)(symbol, \*[, dialect])               | `(root pitch class, quality)`, or None for what is not a chord.                   |
+| [`slash_bass`](#chordsym.parse.slash_bass)(symbol, \*[, dialect])                | The bass pitch class of a slash chord, or None (not a chord, or no bass).         |
 
 ### chordsym.parse.PARSE_CACHE_SIZE *= 8192*
 
 How many distinct `(symbol, dialect)` results [`parse_chord()`](#chordsym.parse.parse_chord) remembers.
 
-### chordsym.parse.chord_tones(symbol, , dialect='default')
+### chordsym.parse.chord_tones(symbol, , dialect='default', bass_first=True)
 
 The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
+
+With `bass_first=False` the tones keep the chord’s own root-position order and the
+bass is not moved (read it with [`slash_bass()`](#chordsym.parse.slash_bass)).
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
 sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
@@ -50,6 +54,10 @@ sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
 ((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))
 >>> chord_tones("A:min7", dialect="harte"), chord_tones("C:maj/3", dialect="harte")
 ((9, 0, 4, 7), (4, 0, 7))
+>>> chord_tones("C6/9"), chord_tones("C69")
+((0, 4, 7, 9, 2), (0, 4, 7, 9, 2))
+>>> chord_tones("C/G"), chord_tones("C/G", bass_first=False)
+((7, 0, 4), (0, 4, 7))
 ```
 
 * **Return type:**
@@ -100,3 +108,17 @@ sharing them is safe.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.parse.slash_bass(symbol, , dialect='default')
+
+The bass pitch class of a slash chord, or None (not a chord, or no bass).
+
+```pycon
+>>> slash_bass("C/G"), slash_bass("C"), slash_bass("C6/9"), slash_bass("C6/9/E")
+(7, None, None, 4)
+>>> slash_bass("A:min7/b3", dialect="harte")
+0
+```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int) | [`None`](https://docs.python.org/3/builtins/constants.html#None)

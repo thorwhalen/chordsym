@@ -1,4 +1,4 @@
-> built 2026-11-22 11:35 UTC from d02e1ef (main) · chordsym 0.0.5. Details: build_info.json
+> built 2026-11-23 02:55 UTC from 4c98f13 (main) · chordsym 0.0.6. Details: build_info.json
 
 # index.html.md
 
@@ -19,6 +19,8 @@ Chord symbols without dependencies (standard library only): is this token a chor
 ```
 
 It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`, `C∆`, `CmΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
+
+`chord_tones(s)` puts the bass first; `chord_tones(s, bass_first=False)` keeps the chord’s own root-position order and `slash_bass(s)` reads the bass separately (`None` without one). `6/9` and `69` are the six-nine chord (`(0, 4, 7, 9, 2)` for C), not a slash chord.
 
 Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function`, `estimate_key`, and `transposition_table` for its key estimate), which rewrites a symbol into the default spelling first. A dialect is a name in `chordsym.DIALECTS` or any pure function `str -> str` (results are cached per function); `chordsym.dialects.register_dialect(name, func)` adds a name. `transpose_chord` takes no dialect, since its output keeps the input’s spelling: it moves default spellings only.
 
@@ -184,11 +186,12 @@ chordsym: chord symbols without dependencies — parse, pitch classes, keys, tra
 
 | [`chord_function`](_autosummary/chordsym.html.md#chordsym.chord_function)(symbol, key, \*[, dialect])         | `"tonic"`, `"diatonic"` or `"outside"` in `key`; None if `symbol` is not a chord.   |
 |-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`chord_tones`](_autosummary/chordsym.html.md#chordsym.chord_tones)(symbol, \*[, dialect])                 | The chord's pitch classes, bass first (the root, or the bass of a slash chord).     |
+| [`chord_tones`](_autosummary/chordsym.html.md#chordsym.chord_tones)(symbol, \*[, dialect, bass_first])     | The chord's pitch classes, bass first (the root, or the bass of a slash chord).     |
 | [`estimate_key`](_autosummary/chordsym.html.md#chordsym.estimate_key)(symbols, \*[, dialect])               | The key that best explains a song's chords, in order; None if there are no chords.  |
 | [`is_chord_token`](_autosummary/chordsym.html.md#chordsym.is_chord_token)(token, \*[, dialect])               | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).           |
 | [`key_name`](_autosummary/chordsym.html.md#chordsym.key_name)(key, \*[, flats])                         | `"G"`, `"Bb"`, `"F#m"`: the key spelled as its tonic chord.                         |
 | [`parse_chord`](_autosummary/chordsym.html.md#chordsym.parse_chord)(symbol, \*[, dialect])                 | `(root pitch class, quality)`, or None for what is not a chord.                     |
+| [`slash_bass`](_autosummary/chordsym.html.md#chordsym.slash_bass)(symbol, \*[, dialect])                  | The bass pitch class of a slash chord, or None (not a chord, or no bass).           |
 | [`transpose_chord`](_autosummary/chordsym.html.md#chordsym.transpose_chord)(symbol, semitones, \*[, flats])    | `symbol` moved by `semitones`: root and bass move, the rest is kept as written.     |
 | [`transposition_table`](_autosummary/chordsym.html.md#chordsym.transposition_table)(symbols, semitones, \*[, ...]) | The chords of a song moved by `semitones`, spelled for the new key.                 |
 | [`uses_flats`](_autosummary/chordsym.html.md#chordsym.uses_flats)(key)                                    | Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.         |
@@ -213,9 +216,12 @@ A key: its tonic as a pitch class (C = 0, C# = 1, … B = 11), major or minor.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### chordsym.chord_tones(symbol, , dialect='default')
+### chordsym.chord_tones(symbol, , dialect='default', bass_first=True)
 
 The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
+
+With `bass_first=False` the tones keep the chord’s own root-position order and the
+bass is not moved (read it with [`slash_bass()`](_autosummary/chordsym.html.md#chordsym.slash_bass)).
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
 sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
@@ -227,6 +233,10 @@ sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
 ((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))
 >>> chord_tones("A:min7", dialect="harte"), chord_tones("C:maj/3", dialect="harte")
 ((9, 0, 4, 7), (4, 0, 7))
+>>> chord_tones("C6/9"), chord_tones("C69")
+((0, 4, 7, 9, 2), (0, 4, 7, 9, 2))
+>>> chord_tones("C/G"), chord_tones("C/G", bass_first=False)
+((7, 0, 4), (0, 4, 7))
 ```
 
 * **Return type:**
@@ -306,6 +316,20 @@ sharing them is safe.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.slash_bass(symbol, , dialect='default')
+
+The bass pitch class of a slash chord, or None (not a chord, or no bass).
+
+```pycon
+>>> slash_bass("C/G"), slash_bass("C"), slash_bass("C6/9"), slash_bass("C6/9/E")
+(7, None, None, 4)
+>>> slash_bass("A:min7/b3", dialect="harte")
+0
+```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### chordsym.transpose_chord(symbol, semitones, , flats=False)
 
@@ -459,18 +483,22 @@ Other spellings are read through a `dialect` (see [`chordsym.dialects`](_autosum
 
 ### Functions
 
-| [`chord_tones`](_autosummary/chordsym.parse.html.md#chordsym.parse.chord_tones)(symbol, \*[, dialect])   | The chord's pitch classes, bass first (the root, or the bass of a slash chord).   |
-|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`is_chord_token`](_autosummary/chordsym.parse.html.md#chordsym.parse.is_chord_token)(token, \*[, dialect]) | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).         |
-| [`parse_chord`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord)(symbol, \*[, dialect])   | `(root pitch class, quality)`, or None for what is not a chord.                   |
+| [`chord_tones`](_autosummary/chordsym.parse.html.md#chordsym.parse.chord_tones)(symbol, \*[, dialect, bass_first])   | The chord's pitch classes, bass first (the root, or the bass of a slash chord).   |
+|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`is_chord_token`](_autosummary/chordsym.parse.html.md#chordsym.parse.is_chord_token)(token, \*[, dialect])             | True if `token` reads as a chord symbol (`G`, `F#m7b5`, `E7(#9)`, `C/G`).         |
+| [`parse_chord`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord)(symbol, \*[, dialect])               | `(root pitch class, quality)`, or None for what is not a chord.                   |
+| [`slash_bass`](_autosummary/chordsym.parse.html.md#chordsym.parse.slash_bass)(symbol, \*[, dialect])                | The bass pitch class of a slash chord, or None (not a chord, or no bass).         |
 
 ### chordsym.parse.PARSE_CACHE_SIZE *= 8192*
 
 How many distinct `(symbol, dialect)` results [`parse_chord()`](_autosummary/chordsym.parse.html.md#chordsym.parse.parse_chord) remembers.
 
-### chordsym.parse.chord_tones(symbol, , dialect='default')
+### chordsym.parse.chord_tones(symbol, , dialect='default', bass_first=True)
 
 The chord’s pitch classes, bass first (the root, or the bass of a slash chord).
+
+With `bass_first=False` the tones keep the chord’s own root-position order and the
+bass is not moved (read it with [`slash_bass()`](_autosummary/chordsym.parse.html.md#chordsym.parse.slash_bass)).
 
 Triads by quality (`m`, `dim`, `aug`/`+`, `sus2`, `sus4`, `5`), then
 sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
@@ -482,6 +510,10 @@ sevenths (`7`, `maj7`/`Δ`/`∆`, `dim7`/`o7`, `m7b5`), sixths and added ninths.
 ((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))
 >>> chord_tones("A:min7", dialect="harte"), chord_tones("C:maj/3", dialect="harte")
 ((9, 0, 4, 7), (4, 0, 7))
+>>> chord_tones("C6/9"), chord_tones("C69")
+((0, 4, 7, 9, 2), (0, 4, 7, 9, 2))
+>>> chord_tones("C/G"), chord_tones("C/G", bass_first=False)
+((7, 0, 4), (0, 4, 7))
 ```
 
 * **Return type:**
@@ -532,6 +564,20 @@ sharing them is safe.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)] | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### chordsym.parse.slash_bass(symbol, , dialect='default')
+
+The bass pitch class of a slash chord, or None (not a chord, or no bass).
+
+```pycon
+>>> slash_bass("C/G"), slash_bass("C"), slash_bass("C6/9"), slash_bass("C6/9/E")
+(7, None, None, 4)
+>>> slash_bass("A:min7/b3", dialect="harte")
+0
+```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 
 # _autosummary/chordsym.transpose.html.md
@@ -626,16 +672,18 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-11-22 11:35 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/d02e1efde8a53eb6f804fc97b9654e4e6878f321"><code>d02e1ef</code></a> on branch <code>main</code>, for **chordsym 0.0.5** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-23 02:55 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/4c98f139f4c3592d041b1d3bd4615f6146c3f0f3"><code>4c98f13</code></a> on branch <code>main</code>, for **chordsym 0.0.6** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.6) is behind the latest release on PyPI (0.0.7): `pip install chordsym` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/d02e1efde8a53eb6f804fc97b9654e4e6878f321"><code>d02e1efde8a53eb6f804fc97b9654e4e6878f321</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/4c98f139f4c3592d041b1d3bd4615f6146c3f0f3"><code>4c98f139f4c3592d041b1d3bd4615f6146c3f0f3</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -646,9 +694,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/45017950335">45017950335</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/45102792289">45102792289</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>d02e1efde8a53eb6f804fc97b9654e4e6878f321</code> (in the history of the built commit) |
+| Event commit | <code>4c98f139f4c3592d041b1d3bd4615f6146c3f0f3</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -673,13 +721,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/chordsym/0.0.5/">0.0.5</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.7/">0.0.7</a>, newer than the documented version (0.0.6).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout d02e1efde8a53eb6f804fc97b9654e4e6878f321
+git checkout 4c98f139f4c3592d041b1d3bd4615f6146c3f0f3
 pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
