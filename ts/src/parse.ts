@@ -100,6 +100,16 @@ export function parseChord(symbol: string, options: DialectOptions = {}): [numbe
   return [root, quality];
 }
 
+/** "6/9" is the six-nine chord, not a slash chord: read it as "69" (Python `_SIX_NINE_SLASH_RE`). */
+const SIX_NINE_SLASH_RE = /(?<=[^/\d])6\/9(?!\d)/u;
+const SIX_NINE_RE = /(?<!\d)69(?!\d)/u;
+/** `(head, bass text)`: Python `_split_bass`. */
+function splitBass(symbol: string): [string, string] {
+  const text = strip(symbol).replace(SIX_NINE_SLASH_RE, "69");
+  const slash = text.indexOf("/");
+  return slash < 0 ? [text, ""] : [text.slice(0, slash), text.slice(slash + 1)];
+}
+
 function note(text: string): number | null {
   const re = NOTE_AT_START_RE;
   re.lastIndex = 0;
@@ -109,17 +119,19 @@ function note(text: string): number | null {
 
 /**
  * The chord's pitch classes, bass first (the root, or the bass of a slash chord).
- * `options.dialect` names how `symbol` is spelled, as in `parseChord`.
+ * `options.dialect` names how `symbol` is spelled, as in `parseChord`. With
+ * `bassFirst: false` the tones keep the chord's own root-position order and the bass is
+ * not moved (read it with `slashBass`).
  */
-export function chordTones(symbol: string, options: DialectOptions = {}): number[] | null {
+export function chordTones(
+  symbol: string,
+  options: DialectOptions & { bassFirst?: boolean } = {},
+): number[] | null {
   symbol = resolveDialect(options.dialect)(symbol);
   const parsed = parseChord(symbol);
   if (parsed === null) return null;
   const [root, quality] = parsed;
-  const stripped = strip(symbol);
-  const slash = stripped.indexOf("/");
-  const head = slash < 0 ? stripped : stripped.slice(0, slash);
-  const bassText = slash < 0 ? "" : stripped.slice(slash + 1);
+  const [head, bassText] = splitBass(symbol);
   let rest = head.replace(NOTE_RE, "");
   const third = quality === "minor" || quality === "diminished" ? 3 : 4;
   let fifth = quality === "diminished" ? 6 : 7;
@@ -132,14 +144,24 @@ export function chordTones(symbol: string, options: DialectOptions = {}): number
   // added one implies no seventh.
   const altered = [...rest.matchAll(ALTERED_PATTERN)].map((m) => ALTERED_SEMITONES[`${m[1]}${m[2]}`]);
   rest = rest.replace(ALTERED_PATTERN, "");
-  if (rest.includes("dim7") || rest === "°7" || rest === "o7") intervals.push(9);
+  const sixNine = SIX_NINE_RE.test(rest); // a sixth and a ninth, no seventh
+  if (sixNine) intervals.push(9, 2);
+  else if (rest.includes("dim7") || rest === "°7" || rest === "o7") intervals.push(9);
   else if (MAJOR_SEVENTH_RE.test(rest)) intervals.push(11);
   else if (SEVENTH_RE.test(rest)) intervals.push(10);
-  if (SIXTH_RE.test(rest)) intervals.push(9);
+  if (SIXTH_RE.test(rest) && !sixNine) intervals.push(9);
   if (NINTH_RE.test(rest) && !intervals.includes(2)) intervals.push(2);
   intervals.push(...altered.filter((i) => i !== undefined));
   let tones = [...new Set(intervals.map((i) => mod(root + i, 12)))];
   const bass = bassText ? note(bassText) : null;
-  if (bass !== null) tones = [bass, ...tones.filter((t) => t !== bass)];
+  if (bass !== null && options.bassFirst !== false) tones = [bass, ...tones.filter((t) => t !== bass)];
   return tones;
+}
+
+/** The bass pitch class of a slash chord, or null (not a chord, or no bass). */
+export function slashBass(symbol: string, options: DialectOptions = {}): number | null {
+  symbol = resolveDialect(options.dialect)(symbol);
+  if (parseChord(symbol) === null) return null;
+  const [, bassText] = splitBass(symbol);
+  return bassText ? note(bassText) : null;
 }
