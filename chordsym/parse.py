@@ -38,7 +38,8 @@ _SIXTH_RE = _grammar.compile_pattern("sixth")
 _NINTH_RE = _grammar.compile_pattern("ninth")
 _ALTERED_RE = _grammar.compile_pattern("altered")
 _SIX_NINE_SLASH_RE = re.compile(r"(?<=[^/\d])6/9(?!\d)")
-_SIX_NINE_RE = re.compile(r"(?<!\d)69(?!\d)")
+_SIX_NINE_RE = re.compile(r"(?<!\d)(?:69|6\(9\))(?!\d)")
+_ALTERED_FIFTH_RE = _grammar.compile_pattern("altered_fifth")
 #: Semitones above the root of each altered extension.
 _ALTERED_SEMITONES = {("b", "9"): 1, ("#", "9"): 3, ("#", "11"): 6, ("b", "13"): 8}
 _PITCH_CLASSES = _grammar.PITCH_CLASSES
@@ -165,6 +166,9 @@ def chord_tones(
     # natural 9/11/13 they contain (nor, when added, imply a seventh).
     altered = [_ALTERED_SEMITONES.get(m.groups()) for m in _ALTERED_RE.finditer(rest)]
     rest = _ALTERED_RE.sub("", rest)
+    altered_fifth = _ALTERED_FIFTH_RE.search(rest)
+    if altered_fifth and quality != "open" and fifth == 7:  # b5 / #5 replace a plain fifth
+        intervals[2] = 6 if altered_fifth.group(1) == "b" else 8
     six_nine = _SIX_NINE_RE.search(rest) is not None  # a sixth and a ninth, no seventh
     if six_nine:
         intervals.extend([9, 2])
