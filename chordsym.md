@@ -1,4 +1,4 @@
-> built 2026-11-23 02:55 UTC from 4c98f13 (main) · chordsym 0.0.6. Details: build_info.json
+> built 2026-11-23 08:00 UTC from 6da85bb (main) · chordsym 0.0.7. Details: build_info.json
 
 # index.html.md
 
@@ -672,18 +672,16 @@ Whether chords in `key` are spelled with flats (Bb, Eb) rather than sharps.
 
 # About this build
 
-This documentation was built on **2026-11-23 02:55 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/4c98f139f4c3592d041b1d3bd4615f6146c3f0f3"><code>4c98f13</code></a> on branch <code>main</code>, for **chordsym 0.0.6** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-23 08:00 UTC** from commit <a href="https://github.com/thorwhalen/chordsym/commit/6da85bbf4a111963ac8aa443bbd94139169fdb8e"><code>6da85bb</code></a> on branch <code>main</code>, for **chordsym 0.0.7** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.6) is behind the latest release on PyPI (0.0.7): `pip install chordsym` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/4c98f139f4c3592d041b1d3bd4615f6146c3f0f3"><code>4c98f139f4c3592d041b1d3bd4615f6146c3f0f3</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/chordsym/commit/6da85bbf4a111963ac8aa443bbd94139169fdb8e"><code>6da85bbf4a111963ac8aa443bbd94139169fdb8e</code></a> |
 | Branch              | <code>main</code>                                                                                                                                          |
 | Tags at this commit | none                                                                                                                                                       |
 | Working tree        | clean                                                                                                                                                      |
@@ -694,15 +692,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/chordsym</code>                                                           |
-| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/45102792289">45102792289</a>  |
+| Run          | <a href="https://github.com/thorwhalen/chordsym/actions/runs/45135092254">45135092254</a>  |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>4c98f139f4c3592d041b1d3bd4615f6146c3f0f3</code> (in the history of the built commit) |
+| Event commit | <code>6da85bbf4a111963ac8aa443bbd94139169fdb8e</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.23  |
+| epythet  | 0.2.25  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.16 |
@@ -721,14 +719,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/chordsym/0.0.7/">0.0.7</a>, newer than the documented version (0.0.6).
+Latest release: <a href="https://pypi.org/project/chordsym/0.0.7/">0.0.7</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/chordsym && cd chordsym
-git checkout 4c98f139f4c3592d041b1d3bd4615f6146c3f0f3
-pip install "epythet==0.2.23"
+git checkout 6da85bbf4a111963ac8aa443bbd94139169fdb8e
+pip install "epythet==0.2.25"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 
