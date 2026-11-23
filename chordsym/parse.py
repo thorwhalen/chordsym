@@ -167,7 +167,9 @@ def chord_tones(
     altered = [_ALTERED_SEMITONES.get(m.groups()) for m in _ALTERED_RE.finditer(rest)]
     rest = _ALTERED_RE.sub("", rest)
     altered_fifth = _ALTERED_FIFTH_RE.search(rest)
-    if altered_fifth and quality != "open" and fifth == 7:  # b5 / #5 replace a plain fifth
+    if (
+        altered_fifth and quality != "open" and fifth == 7
+    ):  # b5 / #5 replace a plain fifth
         intervals[2] = 6 if altered_fifth.group(1) == "b" else 8
     six_nine = _SIX_NINE_RE.search(rest) is not None  # a sixth and a ninth, no seventh
     if six_nine:
