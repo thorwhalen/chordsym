@@ -19,7 +19,7 @@ Every pattern here must mean the same thing in Python's ``re`` and in a JavaScri
 by running the same cases on both sides.
 
 >>> sorted(PATTERNS)[:3]
-['altered', 'chord', 'diminished']
+['altered', 'altered_fifth', 'chord']
 """
 
 import re
@@ -43,6 +43,7 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"[0-9]{0,2}[M+\-]?"  # extension: 7, 9, 13; Brazilian 7M, 7+, 5-
         r"(?:sus[0-9]{0,2}|(?:maj|add|dim|aug|no|m|b|#|\+|-)[0-9]{1,2}[+\-]?)*"  # b5, add9
         r"(?:/(?:[#b]?[0-9]{1,2}[+\-#b]?|sus[0-9]{0,2}))*"  # stacked: 7/9, 5-/7, 7/sus4
+        r"(?:(?:maj|add|dim|aug|no|m|b|#|\+|-)[0-9]{1,2}[+\-]?)*"  # alterations after one: 6/9b5
         r"(?:\([^()" + WS + r"]{1,10}\))*"  # parenthesised alterations: (#9), 7(4)(9)
         r"(?:/[A-G][#b]?)?"  # bass
         r"\)?\*?",
@@ -62,6 +63,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
     "seventh": (r"(?<!add)(7|9|11|13)", ""),
     "sixth": (r"(?<![0-9])6", ""),
     "ninth": (r"9|add2", ""),
+    # An altered fifth (b5, #5): it replaces the fifth rather than adding a tone.
+    "altered_fifth": (r"([b#])5(?![0-9])", ""),
     # An altered extension (b9, #9, #11, b13), with an ``add`` before it when added.
     "altered": (r"(?:add)?([b#])(9|11|13)", ""),
     # Root, suffix, and a final /bass with what trails it (used with a whole-string match).

@@ -43,6 +43,7 @@ const NOTE_RE = anywhere("note");
 const MAJOR_SEVENTH_RE = anywhere("major_seventh");
 const SEVENTH_RE = anywhere("seventh");
 const SIXTH_RE = anywhere("sixth");
+const ALTERED_FIFTH_RE = anywhere("altered_fifth");
 const NINTH_RE = anywhere("ninth");
 const ALTERED_PATTERN = new RegExp(PATTERNS.altered[0], "gu");
 /** Semitones above the root of each altered extension. */
@@ -102,7 +103,7 @@ export function parseChord(symbol: string, options: DialectOptions = {}): [numbe
 
 /** "6/9" is the six-nine chord, not a slash chord: read it as "69" (Python `_SIX_NINE_SLASH_RE`). */
 const SIX_NINE_SLASH_RE = /(?<=[^/\d])6\/9(?!\d)/u;
-const SIX_NINE_RE = /(?<!\d)69(?!\d)/u;
+const SIX_NINE_RE = /(?<!\d)(?:69|6\(9\))(?!\d)/u;
 /** `(head, bass text)`: Python `_split_bass`. */
 function splitBass(symbol: string): [string, string] {
   const text = strip(symbol).replace(SIX_NINE_SLASH_RE, "69");
@@ -144,6 +145,8 @@ export function chordTones(
   // added one implies no seventh.
   const altered = [...rest.matchAll(ALTERED_PATTERN)].map((m) => ALTERED_SEMITONES[`${m[1]}${m[2]}`]);
   rest = rest.replace(ALTERED_PATTERN, "");
+  const alteredFifth = ALTERED_FIFTH_RE.exec(rest); // b5 / #5 replace the fifth
+  if (alteredFifth && quality !== "open" && fifth === 7) intervals[2] = alteredFifth[1] === "b" ? 6 : 8;
   const sixNine = SIX_NINE_RE.test(rest); // a sixth and a ninth, no seventh
   if (sixNine) intervals.push(9, 2);
   else if (rest.includes("dim7") || rest === "°7" || rest === "o7") intervals.push(9);
