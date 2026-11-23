@@ -24,6 +24,7 @@ const FUNCTIONS: Record<string, AnyFn> = {
   is_chord_token: chordsym.isChordToken,
   parse_chord: chordsym.parseChord,
   chord_tones: chordsym.chordTones,
+  slash_bass: chordsym.slashBass,
   transpose_chord: chordsym.transposeChord,
   transposition_table: chordsym.transpositionTable,
   estimate_key: chordsym.estimateKey,
@@ -44,7 +45,10 @@ function call(c: Case): unknown {
   const fn = FUNCTIONS[c.fn];
   if (fn === undefined) throw new Error(`no TS twin for ${c.fn}`);
   const args = [...(c.args ?? [])];
-  if (c.kwargs && Object.keys(c.kwargs).length > 0) args.push(c.kwargs);
+  if (c.kwargs && Object.keys(c.kwargs).length > 0) {
+    const camel = (k: string) => k.replace(/_([a-z])/g, (_, ch: string) => ch.toUpperCase());
+    args.push(Object.fromEntries(Object.entries(c.kwargs).map(([k, v]) => [camel(k), v])));
+  }
   try {
     const result = (fn as (...a: unknown[]) => unknown)(...args);
     const encode = ENCODERS[c.fn] as ((r: unknown) => unknown) | undefined;

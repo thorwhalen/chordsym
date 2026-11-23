@@ -37,6 +37,8 @@ _SEVENTH_RE = _grammar.compile_pattern("seventh")
 _SIXTH_RE = _grammar.compile_pattern("sixth")
 _NINTH_RE = _grammar.compile_pattern("ninth")
 _ALTERED_RE = _grammar.compile_pattern("altered")
+_SIX_NINE_SLASH_RE = re.compile(r"(?<=[^/\d])6/9(?!\d)")
+_SIX_NINE_RE = re.compile(r"(?<!\d)69(?!\d)")
 #: Semitones above the root of each altered extension.
 _ALTERED_SEMITONES = {("b", "9"): 1, ("#", "9"): 3, ("#", "11"): 6, ("b", "13"): 8}
 _PITCH_CLASSES = _grammar.PITCH_CLASSES
@@ -113,10 +115,21 @@ def _note(text: str) -> int | None:
     return (_PITCH_CLASSES[m.group(1)] + _ACCIDENTALS[m.group(2)]) % 12
 
 
+def _split_bass(symbol: str) -> tuple[str, str]:
+    """``(head, bass text)``; "6/9" is the six-nine chord, not a slash chord, so it is read as "69"."""
+    head, _, bass_text = _SIX_NINE_SLASH_RE.sub(
+        "69", symbol.strip(), count=1
+    ).partition("/")
+    return head, bass_text
+
+
 def chord_tones(
-    symbol: str, *, dialect: str | Dialect = "default"
+    symbol: str, *, dialect: str | Dialect = "default", bass_first: bool = True
 ) -> tuple[int, ...] | None:
     """The chord's pitch classes, bass first (the root, or the bass of a slash chord).
+
+    With ``bass_first=False`` the tones keep the chord's own root-position order and the
+    bass is not moved (read it with :func:`slash_bass`).
 
     Triads by quality (``m``, ``dim``, ``aug``/``+``, ``sus2``, ``sus4``, ``5``), then
     sevenths (``7``, ``maj7``/``Δ``/``∆``, ``dim7``/``o7``, ``m7b5``), sixths and added ninths.
@@ -127,13 +140,17 @@ def chord_tones(
     ((0, 3, 6, 9), (0, 4, 7, 11), (0, 3, 7, 11))
     >>> chord_tones("A:min7", dialect="harte"), chord_tones("C:maj/3", dialect="harte")
     ((9, 0, 4, 7), (4, 0, 7))
+    >>> chord_tones("C6/9"), chord_tones("C69")
+    ((0, 4, 7, 9, 2), (0, 4, 7, 9, 2))
+    >>> chord_tones("C/G"), chord_tones("C/G", bass_first=False)
+    ((7, 0, 4), (0, 4, 7))
     """
     symbol = resolve_dialect(dialect)(symbol)
     parsed = parse_chord(symbol)
     if parsed is None:
         return None
     root, quality = parsed
-    head, _, bass_text = symbol.strip().partition("/")
+    head, bass_text = _split_bass(symbol)
     rest = _NOTE_RE.sub("", head, count=1)
     third = {"minor": 3, "diminished": 3}.get(quality, 4)
     fifth = 6 if quality == "diminished" else 7
@@ -148,19 +165,37 @@ def chord_tones(
     # natural 9/11/13 they contain (nor, when added, imply a seventh).
     altered = [_ALTERED_SEMITONES.get(m.groups()) for m in _ALTERED_RE.finditer(rest)]
     rest = _ALTERED_RE.sub("", rest)
-    if "dim7" in rest or rest in ("°7", "o7"):
+    six_nine = _SIX_NINE_RE.search(rest) is not None  # a sixth and a ninth, no seventh
+    if six_nine:
+        intervals.extend([9, 2])
+    elif "dim7" in rest or rest in ("°7", "o7"):
         intervals.append(9)
     elif _MAJOR_SEVENTH_RE.search(rest):
         intervals.append(11)
     elif _SEVENTH_RE.search(rest):
         intervals.append(10)
-    if _SIXTH_RE.search(rest):
+    if _SIXTH_RE.search(rest) and not six_nine:
         intervals.append(9)
     if _NINTH_RE.search(rest) and 2 not in intervals:
         intervals.append(2)
     intervals.extend(i for i in altered if i is not None)
     tones = list(dict.fromkeys((root + i) % 12 for i in intervals))
     bass = _note(bass_text) if bass_text else None
-    if bass is not None:
+    if bass is not None and bass_first:
         tones = [bass] + [t for t in tones if t != bass]
     return tuple(tones)
+
+
+def slash_bass(symbol: str, *, dialect: str | Dialect = "default") -> int | None:
+    """The bass pitch class of a slash chord, or None (not a chord, or no bass).
+
+    >>> slash_bass("C/G"), slash_bass("C"), slash_bass("C6/9"), slash_bass("C6/9/E")
+    (7, None, None, 4)
+    >>> slash_bass("A:min7/b3", dialect="harte")
+    0
+    """
+    symbol = resolve_dialect(dialect)(symbol)
+    if parse_chord(symbol) is None:
+        return None
+    _, bass_text = _split_bass(symbol)
+    return _note(bass_text) if bass_text else None

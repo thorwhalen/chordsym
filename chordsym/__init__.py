@@ -9,7 +9,7 @@
 
 from chordsym.keys import Key, chord_function, estimate_key
 from chordsym.dialects import DIALECTS, Dialect
-from chordsym.parse import chord_tones, is_chord_token, parse_chord
+from chordsym.parse import chord_tones, is_chord_token, parse_chord, slash_bass
 from chordsym.transpose import (
     key_name,
     transpose_chord,
@@ -27,6 +27,7 @@ __all__ = [
     "is_chord_token",
     "key_name",
     "parse_chord",
+    "slash_bass",
     "transpose_chord",
     "transposition_table",
     "uses_flats",

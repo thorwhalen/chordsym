@@ -14,6 +14,8 @@ Chord symbols without dependencies (standard library only): is this token a chor
 
 It reads the spellings found in scraped chord charts (`C6/9`, `Bm5-/7`, Brazilian `7M`, `E7(#9)`, `D/F#`, `Co7`, `CΔ7`, `C∆`, `CmΔ7`), not only textbook ones. Pitch classes are ints 0-11 (C = 0).
 
+`chord_tones(s)` puts the bass first; `chord_tones(s, bass_first=False)` keeps the chord's own root-position order and `slash_bass(s)` reads the bass separately (`None` without one). `6/9` and `69` are the six-nine chord (`(0, 4, 7, 9, 2)` for C), not a slash chord.
+
 Other spellings are read through a `dialect=` keyword (on `parse_chord`, `chord_tones`, `is_chord_token`, `chord_function`, `estimate_key`, and `transposition_table` for its key estimate), which rewrites a symbol into the default spelling first. A dialect is a name in `chordsym.DIALECTS` or any pure function `str -> str` (results are cached per function); `chordsym.dialects.register_dialect(name, func)` adds a name. `transpose_chord` takes no dialect, since its output keeps the input's spelling: it moves default spellings only.
 
 - `"default"`: the chart spellings above.
